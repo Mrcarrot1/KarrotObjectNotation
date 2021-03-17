@@ -352,9 +352,5 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-
-*SensitiveInformation.cs
-*GUI*
-*CBMessenger*
-*Old*
-*token*
+#VS Code workspaces
+*.code-workspace
