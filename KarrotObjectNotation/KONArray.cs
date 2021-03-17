@@ -26,19 +26,6 @@ namespace KarrotObjectNotation
             Parent = parent;
             Items = new List<string>();
         }
-        public KONArray(string name, List<string> items)
-        {
-            Name = name;
-            Items = items;
-            Parent = null;
-        }
-        public KONArray(string name, KONNode parent, List<string> items)
-        {
-            Name = name;
-            Items = items;
-            Parent = parent;
-        }
-
         #endregion
     }
 }
