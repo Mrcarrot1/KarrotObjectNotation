@@ -354,3 +354,6 @@ MigrationBackup/
 
 #VS Code workspaces
 *.code-workspace
+
+#NuGet config
+*/nuget.config
