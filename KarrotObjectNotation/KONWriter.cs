@@ -2,12 +2,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Globalization;
 
 namespace KarrotObjectNotation
 {
     public class KONWriter
     {
-        public static string Write(KONNode node, int currentDepth = 0)
+        public CaseWriteMode NodeNameWriteMode { get; set; }
+        public CaseWriteMode KeyWriteMode { get; set; }
+        public CaseWriteMode ValueWriteMode { get; set; }
+        public string Write(KONNode node, int currentDepth = 0)
         {
             //It feels wrong to do it like this but this way it's nice and neatly indented
             string indent = "";
@@ -16,10 +20,10 @@ namespace KarrotObjectNotation
                 indent += "    ";
             }
             string indent2 = indent + "    ";
-            string output = $"{indent}{node.Name}\n{indent}{{";
+            string output = $"{indent}{GetCase(node.Name, NodeNameWriteMode)}\n{indent}{{";
             foreach(KeyValuePair<string, string> pair in node.Values)
             {
-                output += $"\n{indent2}{pair.Key} = {pair.Value}";
+                output += $"\n{indent2}{GetCase(pair.Key, KeyWriteMode)} = {GetCase(pair.Value, ValueWriteMode)}";
             }
             for(int i = 0; i < node.Children.Count; i++)
             {
@@ -33,7 +37,7 @@ namespace KarrotObjectNotation
             output += $"\n{indent}}}";
             return output;
         }
-        public static string WriteArray(KONArray array, int currentDepth = 0)
+        public string WriteArray(KONArray array, int currentDepth = 0)
         {
             string indent = "";
             for(int i = 0; i < currentDepth; i++)
@@ -41,13 +45,34 @@ namespace KarrotObjectNotation
                 indent += "    ";
             }
             string indent2 = indent + "    ";
-            string output = $"{indent}{array.Name}\n{indent}[";
+            string output = $"{indent}{GetCase(array.Name, NodeNameWriteMode)}\n{indent}[";
             foreach(string str in array.Items)
             {
-                output += $"\n{indent2}{str}";
+                output += $"\n{indent2}{GetCase(str, ValueWriteMode)}";
             }
             output += $"\n{indent}]";
             return output;
+            
+        }
+        private string GetCase(string str, CaseWriteMode cwm)
+        {
+            if(cwm == CaseWriteMode.ToUpper) return str.ToUpper();
+            if(cwm == CaseWriteMode.ToLower) return str.ToLower();
+            if(cwm == CaseWriteMode.ToTitle) return new CultureInfo("en-US",false).TextInfo.ToTitleCase(str);
+            else return str;
+        }
+        public KONWriter(CaseWriteMode nodeNameWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode keyWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode valueWriteMode = CaseWriteMode.KeepOriginal)
+        {
+            NodeNameWriteMode = nodeNameWriteMode;
+            KeyWriteMode = keyWriteMode;
+            ValueWriteMode = valueWriteMode;
+        }
+        public enum CaseWriteMode
+        {
+            KeepOriginal,
+            ToUpper,
+            ToLower,
+            ToTitle
         }
     }
 }

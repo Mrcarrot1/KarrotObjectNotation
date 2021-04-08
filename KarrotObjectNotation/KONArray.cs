@@ -12,6 +12,31 @@ namespace KarrotObjectNotation
         public List<string> Items { get; set; }
         public KONNode Parent { get; set; }
 
+        /// <summary>
+        /// Adds an item to the array.
+        /// </summary>
+        /// <param name="item"></param>
+        public void AddItem(string item)
+        {
+            Items.Add(item);
+        }
+
+        /// <summary>
+        /// Checks if an item exists in the array and removes it if it does.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="removeAll">Whether or not to remove all instances of the item.</param>
+        public void RemoveItem(string item, bool removeAll = false)
+        {
+            if(Items.Contains(item))
+            {
+                if(removeAll)
+                    Items.RemoveAll(x => x.Equals(item));
+                else
+                    Items.Remove(item);
+            }
+        }
+
         #region Constructors
 
         public KONArray(string name)

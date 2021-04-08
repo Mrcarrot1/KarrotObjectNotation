@@ -12,16 +12,31 @@ namespace KarrotObjectNotation
         public List<KONNode> Children { get; }
         public int Depth { get; set; }
 
+        /// <summary>
+        /// Adds the given node to this node's children.
+        /// </summary>
+        /// <param name="node"></param>
         public void AddChild(KONNode node)
         {
             node.Parent = this;
             node.Depth = Depth + 1;
             Children.Add(node);
         }
+
+        /// <summary>
+        /// Adds a value to the dictionary.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         public void AddValue(string key, string value)
         {
             Values.Add(key, value);
         }
+
+        /// <summary>
+        /// Adds the given array to this node's arrays.
+        /// </summary>
+        /// <param name="array"></param>
         public void AddArray(KONArray @array)
         {
             @array.Parent = this;
