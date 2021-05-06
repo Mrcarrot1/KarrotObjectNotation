@@ -23,7 +23,7 @@ namespace KarrotObjectNotation
             string output = $"{indent}{GetCase(node.Name, NodeNameWriteMode)}\n{indent}{{";
             foreach(KeyValuePair<string, string> pair in node.Values)
             {
-                output += $"\n{indent2}{GetCase(pair.Key, KeyWriteMode)} = {GetCase(pair.Value, ValueWriteMode)}";
+                output += $"\n{indent2}{GetCase(pair.Key, KeyWriteMode)} = {GetCase(FormatValue(pair.Value), ValueWriteMode)}";
             }
             for(int i = 0; i < node.Children.Count; i++)
             {
@@ -48,7 +48,7 @@ namespace KarrotObjectNotation
             string output = $"{indent}{GetCase(array.Name, NodeNameWriteMode)}\n{indent}[";
             foreach(string str in array.Items)
             {
-                output += $"\n{indent2}{GetCase(str, ValueWriteMode)}";
+                output += $"\n{indent2}{GetCase(FormatValue(str), ValueWriteMode)}";
             }
             output += $"\n{indent}]";
             return output;
@@ -73,6 +73,22 @@ namespace KarrotObjectNotation
             ToUpper,
             ToLower,
             ToTitle
+        }
+        /// <summary>
+        /// Returns a value suitable for use in a KON file
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private static string FormatValue(string input)
+        {
+            return input.Replace("\n", @"\n");
+            //Eventually I will add support for the backslash as an escape character
+            //For now it doesn't really exist
+            /*.Replace("{", @"\{")
+            .Replace("}", @"\}")
+            .Replace("[", @"\[")
+            .Replace("]", @"\]")
+            .Replace("=", @"\=");*/
         }
     }
 }

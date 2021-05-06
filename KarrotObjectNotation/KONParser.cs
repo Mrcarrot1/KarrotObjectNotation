@@ -108,7 +108,7 @@ namespace KarrotObjectNotation
                     }
                     if(line.Contains("=") && !arrayReadMode)
                     {
-                        currentNode.Values.Add(GetCase(line.Split('=')[0].Trim(), KeyReadMode), GetCase(line.Split('=')[1].Trim(), ValueReadMode));
+                        currentNode.Values.Add(GetCase(line.Split('=')[0].Trim(), KeyReadMode), GetCase(FormatValue(line.Split('=')[1].Trim()), ValueReadMode));
                     }
                     if(line.Contains("{") && !previousLine.Contains("{") && previousLine != output.Name && !arrayReadMode)
                     {
@@ -124,7 +124,7 @@ namespace KarrotObjectNotation
                     }
                     if(arrayReadMode && !line.Contains("]") && !line.Contains("["))
                     {
-                        currentArray.Items.Add(GetCase(line, ValueReadMode));
+                        currentArray.Items.Add(GetCase(FormatValue(line), ValueReadMode));
                     }
                     if(line.Contains("]") && arrayReadMode)
                     {
@@ -162,6 +162,15 @@ namespace KarrotObjectNotation
             NodeNameReadMode = nodeNameReadMode;
             KeyReadMode = keyReadMode;
             ValueReadMode = valueReadMode;
+        }
+        /// <summary>
+        /// Takes a string formatted for a KON value and returns its normal version
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private static string FormatValue(string input)
+        {
+            return input.Replace(@"\n", "\n"); //Replace the literal string \n with a line break- this allows for multi-line values in KON
         }
     }
 }
