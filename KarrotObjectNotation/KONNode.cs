@@ -1,16 +1,17 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace KarrotObjectNotation
 {
     public class KONNode
     {
-        public string Name { get; set; }
-        public KONNode Parent { get; set; }
+        public string Name { get; internal set; }
+        public KONNode Parent { get; internal set; }
         public Dictionary<string, string> Values { get; }
         public List<KONArray> Arrays { get; }
         public List<KONNode> Children { get; }
-        public int Depth { get; set; }
+        public int Depth { get; internal set; }
 
         /// <summary>
         /// Adds the given node to this node's children.
@@ -37,10 +38,10 @@ namespace KarrotObjectNotation
         /// Adds the given array to this node's arrays.
         /// </summary>
         /// <param name="array"></param>
-        public void AddArray(KONArray @array)
+        public void AddArray(KONArray array)
         {
-            @array.Parent = this;
-            Arrays.Add(@array);
+            array.Parent = this;
+            Arrays.Add(array);
         }
         
         #region Constructors

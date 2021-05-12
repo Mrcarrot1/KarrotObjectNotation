@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace KarrotObjectNotation
@@ -6,11 +7,11 @@ namespace KarrotObjectNotation
     /// <summary>
     /// Array of string values for use in KON nodes
     /// </summary>
-    public class KONArray
+    public class KONArray : IEnumerable
     {
-        public string Name { get; set; }
-        public List<string> Items { get; set; }
-        public KONNode Parent { get; set; }
+        public string Name { get; internal set; }
+        public List<string> Items { get; internal set; }
+        public KONNode Parent { get; internal set; }
 
         /// <summary>
         /// Adds an item to the array.
@@ -38,7 +39,6 @@ namespace KarrotObjectNotation
         }
 
         #region Constructors
-
         public KONArray(string name)
         {
             Name = name;
@@ -50,6 +50,55 @@ namespace KarrotObjectNotation
             Name = name;
             Parent = parent;
             Items = new List<string>();
+        }
+        #endregion
+
+        #region Enumeration
+        public IEnumerator GetEnumerator()
+        {
+          return new ItemEnumerator(Items.ToArray());
+        }
+
+        private class ItemEnumerator:IEnumerator
+        {
+            public string[] itemList;
+            int position = -1;
+
+            //constructor
+            public ItemEnumerator(string[] list)
+            {
+                itemList=list;
+            }
+            private IEnumerator getEnumerator()
+            {
+                return (IEnumerator)this;
+            }
+            //IEnumerator
+            public bool MoveNext()
+            {
+                position++;
+                return (position < itemList.Length);
+            }
+            //IEnumerator
+            public void Reset()
+            {
+                position = -1;
+            }
+            //IEnumerator
+            public object Current
+            {
+                get
+                {
+                    try
+                    {
+                        return itemList[position];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                }
+            }
         }
         #endregion
     }
