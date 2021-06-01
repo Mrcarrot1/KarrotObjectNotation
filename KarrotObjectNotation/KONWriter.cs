@@ -8,6 +8,7 @@ namespace KarrotObjectNotation
 {
     public class KONWriter
     {
+        public static KONWriter Default = new KONWriter();
         public CaseWriteMode NodeNameWriteMode { get; set; }
         public CaseWriteMode KeyWriteMode { get; set; }
         public CaseWriteMode ValueWriteMode { get; set; }

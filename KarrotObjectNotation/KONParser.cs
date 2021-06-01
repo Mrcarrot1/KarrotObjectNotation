@@ -9,6 +9,7 @@ namespace KarrotObjectNotation
 {
     public class KONParser
     {
+        public static KONParser Default = new KONParser();
         public CaseReadMode NodeNameReadMode { get; set; }
         public CaseReadMode KeyReadMode { get; set; }
         public CaseReadMode ValueReadMode { get; set; }
