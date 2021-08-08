@@ -357,3 +357,8 @@ MigrationBackup/
 
 #NuGet config
 */nuget.config
+#Any files I have for testing purposes
+*[Tt]est*
+#Possible other language implementations I haven't made yet
+*py*
+*C++*
