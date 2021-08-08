@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace KarrotObjectNotation
 {
@@ -10,16 +11,23 @@ namespace KarrotObjectNotation
     public class KONArray : IEnumerable
     {
         public string Name { get; internal set; }
-        public List<string> Items { get; internal set; }
+        public List<IKONValue> Items { get; internal set; }
         public KONNode Parent { get; internal set; }
+
+        public int Count { get { return Items.Count; } }
 
         /// <summary>
         /// Adds an item to the array.
         /// </summary>
         /// <param name="item"></param>
-        public void AddItem(string item)
+        public void AddItem(IKONValue item)
         {
             Items.Add(item);
+        }
+
+        public void AddItem(string item)
+        {
+            Items.Add(new KONValue<string>(item));
         }
 
         /// <summary>
@@ -27,7 +35,7 @@ namespace KarrotObjectNotation
         /// </summary>
         /// <param name="item"></param>
         /// <param name="removeAll">Whether or not to remove all instances of the item.</param>
-        public void RemoveItem(string item, bool removeAll = false)
+        public void RemoveItem(IKONValue item, bool removeAll = false)
         {
             if(Items.Contains(item))
             {
@@ -37,19 +45,34 @@ namespace KarrotObjectNotation
                     Items.Remove(item);
             }
         }
+        /// <summary>
+        /// Checks if the string representation of an item exists in the array and removes it if it does.
+        /// </summary>
+        /// <param name="item">The string representation of the item to remove.</param>
+        /// <param name="removeAll">Whether to remove all instances of the item</param>
+        public void RemoveItem(string item, bool removeAll = false)
+        {
+            if(Items.Where(x => x.ToString() == item).ToList().Count > 0)
+            {
+                if(removeAll)
+                    Items.RemoveAll(x => x.ToString().Equals(item));
+                else
+                    Items.Remove(Items.FirstOrDefault(x => x.ToString().Equals(item)));
+            }
+        }
 
         #region Constructors
         public KONArray(string name)
         {
             Name = name;
-            Items = new List<string>();
+            Items = new List<IKONValue>();
             Parent = null;
         }
         public KONArray(string name, KONNode parent)
         {
             Name = name;
             Parent = parent;
-            Items = new List<string>();
+            Items = new List<IKONValue>();
         }
         #endregion
 
@@ -61,11 +84,11 @@ namespace KarrotObjectNotation
 
         private class ItemEnumerator:IEnumerator
         {
-            public string[] itemList;
+            public IKONValue[] itemList;
             int position = -1;
 
             //constructor
-            public ItemEnumerator(string[] list)
+            public ItemEnumerator(IKONValue[] list)
             {
                 itemList=list;
             }

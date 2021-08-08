@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace KarrotObjectNotation
+{
+    public class KONDatabase
+    {
+        /// <summary>
+        /// The root path to load all KON files in
+        /// </summary>
+        /// <value></value>
+        public string RootPath { get; }
+        public string 
+    }
+}
