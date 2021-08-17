@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Text.Json;
 
 namespace KarrotObjectNotation
 {
@@ -20,19 +21,8 @@ namespace KarrotObjectNotation
         /// <summary>
         /// A static instance of the KONParser class with default settings.
         /// </summary>
-        public static KONParser Default = new KONParser();
-        /// <summary>
-        /// The way in which to read the case of the names of nodes
-        /// </summary>
-        public CaseReadMode NodeNameReadMode { get; set; }
-        /// <summary>
-        /// The way in which to read the case of keys within a node
-        /// </summary>
-        public CaseReadMode KeyReadMode { get; set; }
-        /// <summary>
-        /// The way in which to read the case of values within a node or array
-        /// </summary>
-        public CaseReadMode ValueReadMode { get; set; }
+        public static KONParser Default = new KONParser(KONParserOptions.Default);
+        public KONParserOptions Options { get; set; }
         /// <summary>
         /// Parses the provided string as a KON node.
         /// </summary>
@@ -43,11 +33,13 @@ namespace KarrotObjectNotation
             try
             {
                 Regex specialCharactersRegex = new Regex(@"[^\w\-]");
-                Regex bracketsRegex = new Regex(@"[\[\]\{\}]");
+                Regex bracketsRegex = new Regex(@"(?<!\\)[\[\]\{\}]");
+                Regex startingTypeCharactersRegex = new Regex(@"^[%\^#!@\$&]{1,2}");
                 foreach(Match match in bracketsRegex.Matches(contents))
                 {
                     contents = contents.Replace(match.Value, $"\n{match.Value}\n");
                 }
+                contents = Regex.Replace(contents, @"(?<!\\);", "\n");
                 string[] lines = contents.Split('\n');
                 string previousLine = "";
                 string line = lines[0];
@@ -59,7 +51,7 @@ namespace KarrotObjectNotation
                     line = lines[currentIndex];
                 }
                 //Create the KONNode object and find its name based on the current line 
-                KONNode output = new KONNode(GetCase(line.Trim(), NodeNameReadMode));
+                KONNode output = new KONNode(GetCase(line.Trim(), Options.NodeNameReadMode));
                 KONNode currentNode = output;
                 bool arrayReadMode = false;
                 KONArray currentArray = null;
@@ -89,7 +81,7 @@ namespace KarrotObjectNotation
                         {
                             if(line.StartsWith(typeMarker.Key))
                             {
-                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, ValueReadMode))))
+                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
                             }
                         }*/
                         string[] splitLine = line.Split('=');
@@ -99,141 +91,103 @@ namespace KarrotObjectNotation
                         {
                             value += splitLine[j];
                         }
+                        value = value.Trim();
                         if(line.StartsWith('%'))
                         {
                             if(line.StartsWith("%^"))
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<uint>(uint.Parse(GetCase(value, ValueReadMode))));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), uint.Parse(GetCase(value, Options.ValueReadMode)));
                             else
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<int>(int.Parse(GetCase(value, ValueReadMode))));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), int.Parse(GetCase(value, Options.ValueReadMode)));
                             continue;
                         }
                         if(line.StartsWith('&'))
                         {
                             if(line.StartsWith("&^"))
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<ulong>(ulong.Parse(GetCase(value, ValueReadMode))));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
                             else
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<long>(long.Parse(GetCase(value, ValueReadMode))));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
                             continue;
                         }
                         if(line.StartsWith('!'))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<float>(float.Parse(GetCase(value, ValueReadMode))));
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode),float.Parse(GetCase(value, Options.ValueReadMode)));
                             continue;
                         }
                         if(line.StartsWith('#'))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<double>(double.Parse(GetCase(value, ValueReadMode))));
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), double.Parse(GetCase(value, Options.ValueReadMode)));
                             continue;
                         }
                         if(line.StartsWith('@'))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<bool>(bool.Parse(GetCase(value, ValueReadMode))));
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), bool.Parse(GetCase(value, Options.ValueReadMode)));
                             continue;
                         }
                         if(line.StartsWith('$'))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<string>(GetCase(value, ValueReadMode)));
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(value, Options.ValueReadMode));
                             continue;
                         }
                         if(value.ToLower() == "null")
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<object>(null));
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), null);
                             continue;
                         }
-                        if(int.TryParse(value, out int intResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<int>(intResult));
-                            continue;
-                        }
-                        else if(uint.TryParse(value, out uint uintResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<uint>(uintResult));
-                            continue;
-                        }
-                        else if(long.TryParse(value, out long longResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<long>(longResult));
-                            continue;
-                        }
-                        else if(ulong.TryParse(value, out ulong ulongResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<ulong>(ulongResult));
-                            continue;
-                        }
-                        else if(float.TryParse(value, out float floatResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<float>(floatResult));
-                            continue;
-                        }
-                        else if(double.TryParse(value, out double doubleResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<double>(doubleResult));
-                            continue;
-                        }
-                        else if(bool.TryParse(value, out bool boolResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<bool>(boolResult));
-                            continue;
-                        }
-                        currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<string>(GetCase(value, ValueReadMode)));
+                        currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetValue(value));
                     }
                     if(line.Contains("{") && !previousLine.Contains("{") && previousLine != output.Name && !arrayReadMode)
                     {
-                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), NodeNameReadMode), currentNode);
+                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                         currentNode.AddChild(newNode);
                         currentNode = newNode;
                     }
                     if(line.Contains("[") && !previousLine.Contains("[") && !arrayReadMode)
                     {
-                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), NodeNameReadMode), currentNode);
+                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                         currentNode.AddArray(currentArray);
                         arrayReadMode = true;
                     }
                     if(arrayReadMode && !line.Contains("]") && !line.Contains("["))
                     {
-                        if(int.TryParse(line, out int intResult))
+                        if(line.StartsWith('%'))
                         {
-                            currentArray.AddItem(new KONValue<int>(intResult));
+                            if(line.StartsWith("%^"))
+                                currentArray.AddItem(uint.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                            else
+                                currentArray.AddItem(int.Parse(startingTypeCharactersRegex.Replace(line, "")));
                             continue;
                         }
-                        else if(uint.TryParse(line, out uint uintResult))
+                        if(line.StartsWith('&'))
                         {
-                            currentArray.AddItem(new KONValue<uint>(uintResult));
+                            if(line.StartsWith("&^"))
+                                currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                            else
+                                currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
                             continue;
                         }
-                        else if(long.TryParse(line, out long longResult))
+                        if(line.StartsWith('!'))
                         {
-                            currentArray.AddItem(new KONValue<long>(longResult));
+                            currentArray.AddItem(float.Parse(startingTypeCharactersRegex.Replace(line, "")));
                             continue;
                         }
-                        else if(ulong.TryParse(line, out ulong ulongResult))
+                        if(line.StartsWith('#'))
                         {
-                            currentArray.AddItem(new KONValue<ulong>(ulongResult));
+                            currentArray.AddItem(double.Parse(startingTypeCharactersRegex.Replace(line, "")));
                             continue;
                         }
-                        else if(float.TryParse(line, out float floatResult))
+                        if(line.StartsWith('@'))
                         {
-                            currentArray.AddItem(new KONValue<float>(floatResult));
+                            currentArray.AddItem(bool.Parse(startingTypeCharactersRegex.Replace(line, "")));
                             continue;
                         }
-                        else if(double.TryParse(line, out double doubleResult))
+                        if(line.StartsWith('$'))
                         {
-                            currentArray.AddItem(new KONValue<double>(doubleResult));
+                            currentArray.AddItem(startingTypeCharactersRegex.Replace(line, ""));
                             continue;
                         }
-                        else if(bool.TryParse(line, out bool boolResult))
-                        {
-                            currentArray.AddItem(new KONValue<bool>(boolResult));
-                            continue;
-                        }
-                        if(line.ToLower() == "null")
-                        {
-                            currentArray.AddItem(new KONValue<object>(null));
-                            continue;
-                        }
-                        currentArray.AddItem(GetCase(line, ValueReadMode));
+                        currentArray.AddItem(GetValue(line));
                     }
-                    if(Regex.IsMatch(line, "(?<!\\)]") && arrayReadMode)
+                    if(Regex.IsMatch(line, @"(?<!\\)]") && arrayReadMode)
                     {
                         arrayReadMode = false;
                     }
@@ -285,7 +239,7 @@ namespace KarrotObjectNotation
                     .Replace("{", "\n{\n")
                     .Replace("}", "\n}\n");
                 Regex commasRegex = new Regex(@"(,)(?=(?:[^""]|""[^""]*"")*$)");
-                Regex bracketsRegex = new Regex(@"[\[\]\{\}]");
+                Regex bracketsRegex = new Regex(@"(?<!\\)[\[\]\{\}]");
                 Regex quotesRegex = new Regex(@"(?<!\\)""");
                 Regex specialCharactersRegex = new Regex(@"[^\w\-]");
                 input = $"JSON_OBJECT\n{input}";
@@ -336,7 +290,7 @@ namespace KarrotObjectNotation
                         {
                             if(line.StartsWith(typeMarker.Key))
                             {
-                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, ValueReadMode))))
+                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
                             }
                         }*/
                         string[] splitLine = line.Split(':');
@@ -350,103 +304,23 @@ namespace KarrotObjectNotation
                         //Skip anything where the value is empty- it's probably the beginning of an object(node) or array,
                         //and we'll come back to it on the next pass.
                         if(value == "") continue;
-                        if(int.TryParse(value, out int intResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<int>(intResult));
-                            continue;
-                        }
-                        else if(uint.TryParse(value, out uint uintResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<uint>(uintResult));
-                            continue;
-                        }
-                        else if(long.TryParse(value, out long longResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<long>(longResult));
-                            continue;
-                        }
-                        else if(ulong.TryParse(value, out ulong ulongResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<ulong>(ulongResult));
-                            continue;
-                        }
-                        else if(float.TryParse(value, out float floatResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<float>(floatResult));
-                            continue;
-                        }
-                        else if(double.TryParse(value, out double doubleResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<double>(doubleResult));
-                            continue;
-                        }
-                        else if(bool.TryParse(value, out bool boolResult))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<bool>(boolResult));
-                            continue;
-                        }
-                        if(value.ToLower() == "null")
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), KeyReadMode), new KONValue<object>(null));
-                            continue;
-                        }
-                        currentNode.Values.Add(GetCase(Regex.Replace(key, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), KeyReadMode), new KONValue<string>(GetCase(quotesRegex.Replace(value, ""), ValueReadMode)));
+                        currentNode.Values.Add(GetCase(Regex.Replace(key, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.KeyReadMode), GetValue(value, true));
                     }
                     if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && specialCharactersRegex.Replace(previousLine, "") != output.Name && !arrayReadMode)
                     {
-                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), NodeNameReadMode), currentNode);
+                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                         currentNode.AddChild(newNode);
                         currentNode = newNode;
                     }
-                    if(Regex.IsMatch(line, @"(?<!\\)[") && Regex.IsMatch(line, @"(?<!\\){") && !arrayReadMode)
+                    if(Regex.IsMatch(line, @"(?<!\\)\[") && Regex.IsMatch(line, @"(?<!\\){") && !arrayReadMode)
                     {
-                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), NodeNameReadMode), currentNode);
+                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                         currentNode.AddArray(currentArray);
                         arrayReadMode = true;
                     }
                     if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)[") && !Regex.IsMatch(line, @"(?<!\\)]"))
                     {
-                        if(int.TryParse(line, out int intResult))
-                        {
-                            currentArray.AddItem(new KONValue<int>(intResult));
-                            continue;
-                        }
-                        else if(uint.TryParse(line, out uint uintResult))
-                        {
-                            currentArray.AddItem(new KONValue<uint>(uintResult));
-                            continue;
-                        }
-                        else if(long.TryParse(line, out long longResult))
-                        {
-                            currentArray.AddItem(new KONValue<long>(longResult));
-                            continue;
-                        }
-                        else if(ulong.TryParse(line, out ulong ulongResult))
-                        {
-                            currentArray.AddItem(new KONValue<ulong>(ulongResult));
-                            continue;
-                        }
-                        else if(float.TryParse(line, out float floatResult))
-                        {
-                            currentArray.AddItem(new KONValue<float>(floatResult));
-                            continue;
-                        }
-                        else if(double.TryParse(line, out double doubleResult))
-                        {
-                            currentArray.AddItem(new KONValue<double>(doubleResult));
-                            continue;
-                        }
-                        else if(bool.TryParse(line, out bool boolResult))
-                        {
-                            currentArray.AddItem(new KONValue<bool>(boolResult));
-                            continue;
-                        }
-                        if(line.ToLower() == "null")
-                        {
-                            currentArray.AddItem(new KONValue<object>(null));
-                            continue;
-                        }
-                        currentArray.AddItem(new KONValue<string>(GetCase(quotesRegex.Replace(line, ""), ValueReadMode)));
+                        currentArray.AddItem(GetValue(line, true));
                     }
                     if(Regex.IsMatch(line, @"(?<!\\)]") && arrayReadMode)
                     {
@@ -459,13 +333,17 @@ namespace KarrotObjectNotation
                 }
                 return output;
             }
-            catch(Exception e)
+            catch
             {
-                Console.WriteLine(e.ToString());
-                return null;
-                //throw new FormatException();
+                throw new FormatException();
             }
         }
+        /// <summary>
+        /// Takes a string, determines if it is valid JSON, and returns its KONNode equivalent if it is.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="output"></param>
+        /// <returns></returns>
         public bool TryParseJSON(string input, out KONNode output)
         {
             try
@@ -479,25 +357,60 @@ namespace KarrotObjectNotation
                 return false;
             }
         }
-        private static string GetCase(string str, CaseReadMode crm)
+        /// <summary>
+        /// Takes a value's string representation, determines the correct type for the value, and returns the appropriate KONValue<T> object. Only used in implicit typing.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public object GetValue(string input, bool isJSON = false)
         {
-            if(crm == CaseReadMode.ToUpper) return str.ToUpper();
-            if(crm == CaseReadMode.ToLower) return str.ToLower();
-            if(crm == CaseReadMode.ToTitle) return new CultureInfo("en-US",false).TextInfo.ToTitleCase(str);
+            Regex quotesRegex = new Regex(@"(?<!\\)""");
+            if(Options.AllowImplicitTyping || isJSON)
+            {
+                if(int.TryParse(input, out int intResult))
+                {
+                    return intResult;
+                }
+                if(long.TryParse(input, out long longResult))
+                {
+                    return longResult;
+                }
+                if(float.TryParse(input, out float floatResult))
+                {
+                    return floatResult;
+                }
+                if(double.TryParse(input, out double doubleResult))
+                {
+                    return doubleResult;
+                }
+                if(input.ToLower() == "null")
+                {
+                    return null;
+                }
+                //We check for the unsigned types last just to make sure that, for example,
+                //Int32.MaxValue + 1 doesn't get read as 
+                if(uint.TryParse(input, out uint uintResult))
+                {
+                    return uintResult;
+                }
+                if(ulong.TryParse(input, out ulong ulongResult))
+                {
+                    return ulongResult;
+                }
+            }
+            return isJSON ? GetCase(quotesRegex.Replace(input, ""), Options.ValueReadMode) : GetCase(input, Options.ValueReadMode);
+        }
+        private static string GetCase(string str, KONParserOptions.CaseReadMode crm)
+        {
+            if(crm == KONParserOptions.CaseReadMode.ToUpper) return str.ToUpper();
+            if(crm == KONParserOptions.CaseReadMode.ToLower) return str.ToLower();
+            if(crm == KONParserOptions.CaseReadMode.ToTitle) return new CultureInfo("en-US",false).TextInfo.ToTitleCase(str);
             return str; //At the end, the only one left is keep original
         }
-        public enum CaseReadMode
+        
+        public KONParser(KONParserOptions options)
         {
-            KeepOriginal,
-            ToUpper,
-            ToLower,
-            ToTitle
-        }
-        public KONParser(CaseReadMode nodeNameReadMode = CaseReadMode.KeepOriginal, CaseReadMode keyReadMode = CaseReadMode.KeepOriginal, CaseReadMode valueReadMode = CaseReadMode.KeepOriginal)
-        {
-            NodeNameReadMode = nodeNameReadMode;
-            KeyReadMode = keyReadMode;
-            ValueReadMode = valueReadMode;
+            Options = options;
         }
         /// <summary>
         /// Takes a string formatted for a KON value and returns its normal version
@@ -511,18 +424,57 @@ namespace KarrotObjectNotation
             .Replace("\\]", "]") //for values to contain these characters if they are properly escaped.
             .Replace("\\{", "{") //This technically allows you to nest KON files within each other, but please don't.
             .Replace("\\}", "}")
-            .Replace("\\:", ":"); 
+            .Replace("\\:", ":")
+            .Replace("\\;", ";"); 
         }
-        private readonly Dictionary<string, Type> TypeMarkers = new Dictionary<string, Type>
+    }
+    /// <summary>
+    /// Configuration for a KON parser.
+    /// </summary>
+    public class KONParserOptions
+    {
+        /// <summary>
+        /// Represents the default configuration options for a KONParser.
+        /// </summary>
+        /// <returns></returns>
+        public static KONParserOptions Default = new KONParserOptions();
+
+        /// <summary>
+        /// The case the parser will use when reading node and array names.
+        /// </summary>
+        /// <value></value>
+        public CaseReadMode NodeNameReadMode { get; set; }
+        /// <summary>
+        /// The case the parser will use when reading key names.
+        /// </summary>
+        /// <value></value>
+        public CaseReadMode KeyReadMode { get; set; }
+        /// <summary>
+        /// The case the parser will use when reading value names.
+        /// </summary>
+        /// <value></value>
+        public CaseReadMode ValueReadMode { get; set; }
+
+        /// <summary>
+        /// Whether or not to allow implicit typing. If false, any value of an unspecified type will be read as a string.
+        /// </summary>
+        /// <value></value>
+        public bool AllowImplicitTyping { get; set; }
+
+        public KONParserOptions(CaseReadMode nodeNameReadMode = CaseReadMode.KeepOriginal, CaseReadMode keyReadMode = CaseReadMode.KeepOriginal, CaseReadMode valueReadMode = CaseReadMode.KeepOriginal, bool allowImplicitTyping = true)
         {
-            ["%"] = typeof(int),
-            ["^%"] = typeof(uint),
-            ["&"] = typeof(long),
-            ["^&"] = typeof(ulong),
-            ["!"] = typeof(float),
-            ["#"] = typeof(double),
-            ["$"] = typeof(string),
-            ["@"] = typeof(bool)
-        };
+            NodeNameReadMode = nodeNameReadMode;
+            KeyReadMode = keyReadMode;
+            ValueReadMode = valueReadMode;
+            AllowImplicitTyping = allowImplicitTyping;
+        }
+
+        public enum CaseReadMode
+        {
+            KeepOriginal,
+            ToUpper,
+            ToLower,
+            ToTitle
+        }
     }
 }

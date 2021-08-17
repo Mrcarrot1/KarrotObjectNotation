@@ -10,24 +10,34 @@ namespace KarrotObjectNotation
     /// </summary>
     public class KONArray : IEnumerable
     {
+        /// <summary>
+        /// The array's name.
+        /// </summary>
+        /// <value></value>
         public string Name { get; internal set; }
-        public List<IKONValue> Items { get; internal set; }
+        /// <summary>
+        /// The list of items within the array.
+        /// </summary>
+        /// <value></value>
+        public List<object> Items { get; internal set; }
+        /// <summary>
+        /// The node which contains this array.
+        /// </summary>
+        /// <value></value>
         public KONNode Parent { get; internal set; }
-
+        /// <summary>
+        /// The number of items within this array.
+        /// </summary>
+        /// <value></value>
         public int Count { get { return Items.Count; } }
 
         /// <summary>
         /// Adds an item to the array.
         /// </summary>
         /// <param name="item"></param>
-        public void AddItem(IKONValue item)
+        public void AddItem(object item)
         {
             Items.Add(item);
-        }
-
-        public void AddItem(string item)
-        {
-            Items.Add(new KONValue<string>(item));
         }
 
         /// <summary>
@@ -35,7 +45,7 @@ namespace KarrotObjectNotation
         /// </summary>
         /// <param name="item"></param>
         /// <param name="removeAll">Whether or not to remove all instances of the item.</param>
-        public void RemoveItem(IKONValue item, bool removeAll = false)
+        public void RemoveItem(object item, bool removeAll = false)
         {
             if(Items.Contains(item))
             {
@@ -65,14 +75,14 @@ namespace KarrotObjectNotation
         public KONArray(string name)
         {
             Name = name;
-            Items = new List<IKONValue>();
+            Items = new List<object>();
             Parent = null;
         }
         public KONArray(string name, KONNode parent)
         {
             Name = name;
             Parent = parent;
-            Items = new List<IKONValue>();
+            Items = new List<object>();
         }
         #endregion
 
@@ -84,11 +94,11 @@ namespace KarrotObjectNotation
 
         private class ItemEnumerator:IEnumerator
         {
-            public IKONValue[] itemList;
+            public object[] itemList;
             int position = -1;
 
             //constructor
-            public ItemEnumerator(IKONValue[] list)
+            public ItemEnumerator(object[] list)
             {
                 itemList=list;
             }

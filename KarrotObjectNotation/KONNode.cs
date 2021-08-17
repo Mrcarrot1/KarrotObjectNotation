@@ -6,11 +6,35 @@ namespace KarrotObjectNotation
 {
     public class KONNode
     {
+        /// <summary>
+        /// The node's name.
+        /// </summary>
+        /// <value></value>
         public string Name { get; set; }
+        /// <summary>
+        /// The node which contains this node.
+        /// </summary>
+        /// <value></value>
         public KONNode Parent { get; internal set; }
-        public Dictionary<string, IKONValue> Values { get; }
+        /// <summary>
+        /// The values within this node.
+        /// </summary>
+        /// <value></value>
+        public Dictionary<string, object> Values { get; }
+        /// <summary>
+        /// The list of arrays within this node.
+        /// </summary>
+        /// <value></value>
         public List<KONArray> Arrays { get; }
+        /// <summary>
+        /// The list of nodes within this node.
+        /// </summary>
+        /// <value></value>
         public List<KONNode> Children { get; }
+        /// <summary>
+        /// The number of parent nodes this node has.
+        /// </summary>
+        /// <value></value>
         public int Depth { get; internal set; }
 
         /// <summary>
@@ -29,7 +53,7 @@ namespace KarrotObjectNotation
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public void AddValue(string key, IKONValue value)
+        public void AddValue(string key, object value)
         {
             Values.Add(key, value);
         }
@@ -38,64 +62,6 @@ namespace KarrotObjectNotation
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public void AddValue(string key, string value)
-        {
-            Values.Add(key, new KONValue<string>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, int value)
-        {
-            Values.Add(key, new KONValue<int>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, uint value)
-        {
-            Values.Add(key, new KONValue<uint>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, long value)
-        {
-            Values.Add(key, new KONValue<long>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, ulong value)
-        {
-            Values.Add(key, new KONValue<ulong>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, float value)
-        {
-            Values.Add(key, new KONValue<float>(value));
-        }
-        /// <summary>
-        /// Adds a value to the dictionary.
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void AddValue(string key, double value)
-        {
-            Values.Add(key, new KONValue<double>(value));
-        }
         /// <summary>
         /// Removes a value from the dictionary.
         /// </summary>
@@ -120,7 +86,7 @@ namespace KarrotObjectNotation
         public KONNode(string name)
         {
             Name = name;
-            Values = new Dictionary<string, IKONValue>();
+            Values = new Dictionary<string, object>();
             Children = new List<KONNode>();
             Arrays = new List<KONArray>();
             Parent = null;
@@ -129,7 +95,7 @@ namespace KarrotObjectNotation
         {
             Name = name;
             Parent = parent;
-            Values = new Dictionary<string, IKONValue>();
+            Values = new Dictionary<string, object>();
             Children = new List<KONNode>();
             Arrays = new List<KONArray>();
         }
