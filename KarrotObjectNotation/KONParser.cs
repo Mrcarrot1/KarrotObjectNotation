@@ -57,146 +57,157 @@ namespace KarrotObjectNotation
                 KONArray currentArray = null;
                 for(int i = currentIndex; i < lines.Length; i++)
                 {
-                    previousLine = line;
-                    line = lines[i].Trim();
-                    //Ignore any line that starts with //
-                    if(line.StartsWith("//"))
+                    try
                     {
-                        line = previousLine;
-                        continue;
-                    }
-                    //Ignore any part of the line that comes after //
-                    line = line.Split("//")[0];
-                    //Ignore any blank line-
-                    //We filtered out any preceding or trailing whitespace already
-                    //So any blank line will be an empty string
-                    if(line == "")
-                    {
-                        line = previousLine;
-                        continue;
-                    }
-                    if(line.Contains("=") && !arrayReadMode)
-                    {
-                        /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
+                        previousLine = line;
+                        line = lines[i].Trim();
+                        //Ignore any line that starts with //
+                        if(Regex.IsMatch(line, @"^//"))
                         {
-                            if(line.StartsWith(typeMarker.Key))
+                            line = previousLine;
+                            continue;
+                        }
+                        //Ignore any part of the line that comes after //
+                        line = Regex.Split(line, @"(?<![:\\])//")[0];
+                        //Ignore any blank line-
+                        //We filtered out any preceding or trailing whitespace already
+                        //So any blank line will be an empty string
+                        if(line == "")
+                        {
+                            line = previousLine;
+                            continue;
+                        }
+                        if(line.Contains("=") && !arrayReadMode)
+                        {
+                            /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
                             {
-                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
+                                if(line.StartsWith(typeMarker.Key))
+                                {
+                                    currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
+                                }
+                            }*/
+                            string[] splitLine = line.Split('=');
+                            string key = splitLine[0];
+                            string value = "";
+                            for(int j = 1; j < splitLine.Length; j++)
+                            {
+                                value += splitLine[j];
                             }
-                        }*/
-                        string[] splitLine = line.Split('=');
-                        string key = splitLine[0];
-                        string value = "";
-                        for(int j = 1; j < splitLine.Length; j++)
-                        {
-                            value += splitLine[j];
+                            value = value.Trim();
+                            if(line.StartsWith('%'))
+                            {
+                                if(line.StartsWith("%^"))
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), uint.Parse(GetCase(value, Options.ValueReadMode)));
+                                else
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), int.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('&'))
+                            {
+                                if(line.StartsWith("&^"))
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
+                                else
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('!'))
+                            {
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode),float.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('#'))
+                            {
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), double.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('@'))
+                            {
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), bool.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('$'))
+                            {
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(value, Options.ValueReadMode));
+                                continue;
+                            }
+                            if(value.ToLower() == "null")
+                            {
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), null);
+                                continue;
+                            }
+                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetValue(value));
                         }
-                        value = value.Trim();
-                        if(line.StartsWith('%'))
+                        if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && previousLine != output.Name && !arrayReadMode)
                         {
-                            if(line.StartsWith("%^"))
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), uint.Parse(GetCase(value, Options.ValueReadMode)));
-                            else
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), int.Parse(GetCase(value, Options.ValueReadMode)));
-                            continue;
+                            KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
+                            currentNode.AddChild(newNode);
+                            currentNode = newNode;
                         }
-                        if(line.StartsWith('&'))
+                        if(Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(previousLine, @"(?<!\\)\[") && !arrayReadMode)
                         {
-                            if(line.StartsWith("&^"))
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
-                            else
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
-                            continue;
+                            currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
+                            currentNode.AddArray(currentArray);
+                            arrayReadMode = true;
                         }
-                        if(line.StartsWith('!'))
+                        if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\]") && !Regex.IsMatch(line, @"(?<!\\)\["))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode),float.Parse(GetCase(value, Options.ValueReadMode)));
-                            continue;
+                            if(line.StartsWith('%'))
+                            {
+                                if(line.StartsWith("%^"))
+                                    currentArray.AddItem(uint.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                else
+                                    currentArray.AddItem(int.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('&'))
+                            {
+                                if(line.StartsWith("&^"))
+                                    currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                else
+                                    currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('!'))
+                            {
+                                currentArray.AddItem(float.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('#'))
+                            {
+                                currentArray.AddItem(double.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('@'))
+                            {
+                                currentArray.AddItem(bool.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('$'))
+                            {
+                                currentArray.AddItem(startingTypeCharactersRegex.Replace(line, ""));
+                                continue;
+                            }
+                            currentArray.AddItem(GetValue(line));
                         }
-                        if(line.StartsWith('#'))
+                        if(Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), double.Parse(GetCase(value, Options.ValueReadMode)));
-                            continue;
+                            arrayReadMode = false;
                         }
-                        if(line.StartsWith('@'))
+                        if(Regex.IsMatch(line, @"(?<!\\)}"))
                         {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), bool.Parse(GetCase(value, Options.ValueReadMode)));
-                            continue;
+                            currentNode = currentNode.Parent;
                         }
-                        if(line.StartsWith('$'))
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(value, Options.ValueReadMode));
-                            continue;
-                        }
-                        if(value.ToLower() == "null")
-                        {
-                            currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), null);
-                            continue;
-                        }
-                        currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetValue(value));
                     }
-                    if(line.Contains("{") && !previousLine.Contains("{") && previousLine != output.Name && !arrayReadMode)
+                    catch
                     {
-                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
-                        currentNode.AddChild(newNode);
-                        currentNode = newNode;
-                    }
-                    if(line.Contains("[") && !previousLine.Contains("[") && !arrayReadMode)
-                    {
-                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
-                        currentNode.AddArray(currentArray);
-                        arrayReadMode = true;
-                    }
-                    if(arrayReadMode && !line.Contains("]") && !line.Contains("["))
-                    {
-                        if(line.StartsWith('%'))
-                        {
-                            if(line.StartsWith("%^"))
-                                currentArray.AddItem(uint.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            else
-                                currentArray.AddItem(int.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            continue;
-                        }
-                        if(line.StartsWith('&'))
-                        {
-                            if(line.StartsWith("&^"))
-                                currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            else
-                                currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            continue;
-                        }
-                        if(line.StartsWith('!'))
-                        {
-                            currentArray.AddItem(float.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            continue;
-                        }
-                        if(line.StartsWith('#'))
-                        {
-                            currentArray.AddItem(double.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            continue;
-                        }
-                        if(line.StartsWith('@'))
-                        {
-                            currentArray.AddItem(bool.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                            continue;
-                        }
-                        if(line.StartsWith('$'))
-                        {
-                            currentArray.AddItem(startingTypeCharactersRegex.Replace(line, ""));
-                            continue;
-                        }
-                        currentArray.AddItem(GetValue(line));
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\)]") && arrayReadMode)
-                    {
-                        arrayReadMode = false;
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\)}"))
-                    {
-                        currentNode = currentNode.Parent;
+                        throw new FormatException($"KON Syntax Error at '{line}', line {i}.");
                     }
                 }
                 return output;
+            }
+            catch(FormatException)
+            {
+                throw;
             }
             catch
             {
@@ -234,10 +245,8 @@ namespace KarrotObjectNotation
                 KONNode output = new KONNode("JSON_OBJECT");
                 //Convert JSON syntax to KON-
                 //This includes adding line breaks as JSON does not require them,
-                //But KON does.
-                string convertedString = input
-                    .Replace("{", "\n{\n")
-                    .Replace("}", "\n}\n");
+                //But KON does- though it now has inline syntax,
+                //The parser always reads line-by-line.
                 Regex commasRegex = new Regex(@"(,)(?=(?:[^""]|""[^""]*"")*$)");
                 Regex bracketsRegex = new Regex(@"(?<!\\)[\[\]\{\}]");
                 Regex quotesRegex = new Regex(@"(?<!\\)""");
@@ -249,7 +258,6 @@ namespace KarrotObjectNotation
                     input = input.Replace(match.Value, $"\n{match.Value}\n");
                 }
                 //convertedString = Regex.Replace(convertedString, "/(,)(?=(?:[^\"]|\"[^\"]*\")*$)/m", "\n");
-
                 string[] lines = input.Split('\n').Where(x => x.Trim() != "").ToArray();
                 string previousLine = "";
                 string line = lines[0];
@@ -266,72 +274,80 @@ namespace KarrotObjectNotation
                 KONArray currentArray = null;
                 for(int i = currentIndex; i < lines.Length; i++)
                 {
-                    previousLine = line;
-                    line = lines[i].Trim();
-                    //Ignore any line that starts with //
-                    if(line.StartsWith("//"))
+                    try
                     {
-                        line = previousLine;
-                        continue;
-                    }
-                    //Ignore any part of the line that comes after //
-                    line = line.Split("//")[0];
-                    //Ignore any blank line-
-                    //We filtered out any preceding or trailing whitespace already
-                    //So any blank line will be an empty string
-                    if(line == "")
-                    {
-                        line = previousLine;
-                        continue;
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\):") && !arrayReadMode)
-                    {
-                        /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
+                        previousLine = line;
+                        line = lines[i].Trim();
+                        //Ignore any line that starts with //
+                        if(line.StartsWith("//"))
                         {
-                            if(line.StartsWith(typeMarker.Key))
-                            {
-                                currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
-                            }
-                        }*/
-                        string[] splitLine = line.Split(':');
-                        string key = splitLine[0].Trim();
-                        string value = "";
-                        for(int j = 1; j < splitLine.Length; j++)
-                        {
-                            value += splitLine[j];
+                            line = previousLine;
+                            continue;
                         }
-                        value = value.Trim();
-                        //Skip anything where the value is empty- it's probably the beginning of an object(node) or array,
-                        //and we'll come back to it on the next pass.
-                        if(value == "") continue;
-                        currentNode.Values.Add(GetCase(Regex.Replace(key, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.KeyReadMode), GetValue(value, true));
+                        //Ignore any part of the line that comes after //, unless the // is preceded by :
+                        //Which probably means it's  a URL.
+                        line = Regex.Split(line, @"(?<![:\\])//")[0];
+                        //Ignore any blank line-
+                        //We filtered out any preceding or trailing whitespace already
+                        //So any blank line will be an empty string
+                        if(line == "")
+                        {
+                            line = previousLine;
+                            continue;
+                        }
+                        if(Regex.IsMatch(line, @"(?<!\\):.") && !arrayReadMode)
+                        {
+                            /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
+                            {
+                                if(line.StartsWith(typeMarker.Key))
+                                {
+                                    currentNode.AddValue(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), new KONValue<typeof(typeMarker.Value)>(typeMarker.Value.Parse(GetCase(value, Options.ValueReadMode))))
+                                }
+                            }*/
+                            int firstColonIndex = line.IndexOf(':');
+                            string key = line.Substring(0, firstColonIndex);
+                            string value = line.Substring(firstColonIndex + 1);
+                            value = value.Trim();
+                            //Skip anything where the value is empty- it's probably the beginning of an object(node) or array,
+                            //and we'll come back to it on the next pass.
+                            if(value == "") continue;
+                            currentNode.Values.Add(GetCase(Regex.Replace(key, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.KeyReadMode), GetValue(value, true));
+                        }
+                        if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && specialCharactersRegex.Replace(previousLine, "") != output.Name && !arrayReadMode)
+                        {
+                            KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
+                            currentNode.AddChild(newNode);
+                            currentNode = newNode;
+                        }
+                        if(Regex.IsMatch(line, @"(?<!\\)\[") && !arrayReadMode)
+                        {
+                            currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
+                            currentNode.AddArray(currentArray);
+                            arrayReadMode = true;
+                        }
+                        if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(line, @"(?<!\\)\]"))
+                        {
+                            currentArray.AddItem(GetValue(line, true));
+                        }
+                        if(Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
+                        {
+                            arrayReadMode = false;
+                        }
+                        if(Regex.IsMatch(line, @"(?<!\\)}"))
+                        {
+                            currentNode = currentNode.Parent;
+                        }
                     }
-                    if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && specialCharactersRegex.Replace(previousLine, "") != output.Name && !arrayReadMode)
+                    catch
                     {
-                        KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
-                        currentNode.AddChild(newNode);
-                        currentNode = newNode;
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\)\[") && Regex.IsMatch(line, @"(?<!\\){") && !arrayReadMode)
-                    {
-                        currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
-                        currentNode.AddArray(currentArray);
-                        arrayReadMode = true;
-                    }
-                    if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)[") && !Regex.IsMatch(line, @"(?<!\\)]"))
-                    {
-                        currentArray.AddItem(GetValue(line, true));
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\)]") && arrayReadMode)
-                    {
-                        arrayReadMode = false;
-                    }
-                    if(Regex.IsMatch(line, @"(?<!\\)}"))
-                    {
-                        currentNode = currentNode.Parent;
+                        throw new FormatException($"JSON syntax error at '{line}'.");
                     }
                 }
                 return output;
+            }
+            catch(FormatException)
+            {
+                throw;
             }
             catch
             {
@@ -387,6 +403,10 @@ namespace KarrotObjectNotation
                 {
                     return null;
                 }
+                if(bool.TryParse(input, out bool boolResult))
+                {
+                    return boolResult;
+                }
                 //We check for the unsigned types last just to make sure that, for example,
                 //Int32.MaxValue + 1 doesn't get read as 
                 if(uint.TryParse(input, out uint uintResult))
@@ -419,13 +439,15 @@ namespace KarrotObjectNotation
         /// <returns></returns>
         private static string FormatValue(string input)
         {
-            return input.Replace(@"\n", "\n") //Replace the literal string \n with a line break- this allows for multi-line values in KON
-            .Replace("\\[", "[") //We also escape the miscellaneous KON syntax characters- this allows
-            .Replace("\\]", "]") //for values to contain these characters if they are properly escaped.
-            .Replace("\\{", "{") //This technically allows you to nest KON files within each other, but please don't.
-            .Replace("\\}", "}")
-            .Replace("\\:", ":")
-            .Replace("\\;", ";"); 
+            string[] reservedCharacters = 
+            {
+                "[", "]", "{", "}", "=", ";", "//", "%", "&", "!", "#", "@", "$"
+            };
+            for(int i = 0; i < reservedCharacters.Length; i++)
+            {
+                input = input.Replace($"\\{reservedCharacters[i]}", reservedCharacters[i]).Replace(@"\n", "\n");
+            }
+            return input;
         }
     }
     /// <summary>

@@ -65,7 +65,7 @@ namespace KarrotObjectNotation
             output = outputLines[0];
             for(int i = 1; i < outputLines.Length; i++)
             {
-                output += Options.Inline ? $" {outputLines[i].Trim()} " : $"\n{outputLines[i]}";
+                output += Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
             return output;
         }
@@ -92,7 +92,7 @@ namespace KarrotObjectNotation
             output = outputLines[0];
             for(int i = 1; i < outputLines.Length; i++)
             {
-                output += Options.Inline ? $" {outputLines[i].Trim()} " : $"\n{outputLines[i]}";
+                output += Options.ArrayInline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
             return output;
             
@@ -141,7 +141,7 @@ namespace KarrotObjectNotation
             output = outputLines[0].Trim();
             for(int i = 1; i < outputLines.Length; i++)
             {
-                output += Options.Inline ? $" {outputLines[i].Trim()} " : $"\n{outputLines[i]}";
+                output += Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
             return output;
         }
@@ -164,7 +164,7 @@ namespace KarrotObjectNotation
             {
                 if(array.Items[i] is string)
                     output += $"\n\"{array.Items[i]}\"";
-                else if(array.Items[i] == null)
+                else if(array[i] == null)
                     output += "\nnull";
                 else
                     output += $"\n{array.Items[i].ToString().ToLower()}";
@@ -176,7 +176,7 @@ namespace KarrotObjectNotation
             output = outputLines[0];
             for(int i = 1; i < outputLines.Length; i++)
             {
-                output += Options.ArrayInline ? $" {outputLines[i].Trim()} " : $"\n{outputLines[i]}";
+                output += Options.ArrayInline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
             return output;
         }
@@ -199,13 +199,15 @@ namespace KarrotObjectNotation
         /// <returns></returns>
         private static string FormatValue(string input)
         {
-            return input.Replace("\n", @"\n")
-            .Replace("[", "\\[")
-            .Replace("]", "\\]")
-            .Replace("{", "\\{")
-            .Replace("}", "\\}")
-            .Replace("=", "\\=")
-            .Replace(";", "\\;");
+            string[] reservedCharacters = 
+            {
+                "[", "]", "{", "}", "=", ";", "//", "%", "&", "!", "#", "@", "$"
+            };
+            for(int i = 0; i < reservedCharacters.Length; i++)
+            {
+                input = input.Replace(reservedCharacters[i], $"\\{reservedCharacters[i]}").Replace("\n", @"\n");
+            }
+            return input;
         }
         private static string GetTypeMarker(Type type)
         {

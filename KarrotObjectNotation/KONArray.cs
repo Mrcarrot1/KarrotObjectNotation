@@ -8,7 +8,7 @@ namespace KarrotObjectNotation
     /// <summary>
     /// Array of string values for use in KON nodes
     /// </summary>
-    public class KONArray : IEnumerable
+    public class KONArray : IEnumerable<object>
     {
         /// <summary>
         /// The array's name.
@@ -55,22 +55,7 @@ namespace KarrotObjectNotation
                     Items.Remove(item);
             }
         }
-        /// <summary>
-        /// Checks if the string representation of an item exists in the array and removes it if it does.
-        /// </summary>
-        /// <param name="item">The string representation of the item to remove.</param>
-        /// <param name="removeAll">Whether to remove all instances of the item</param>
-        public void RemoveItem(string item, bool removeAll = false)
-        {
-            if(Items.Where(x => x.ToString() == item).ToList().Count > 0)
-            {
-                if(removeAll)
-                    Items.RemoveAll(x => x.ToString().Equals(item));
-                else
-                    Items.Remove(Items.FirstOrDefault(x => x.ToString().Equals(item)));
-            }
-        }
-
+        
         #region Constructors
         public KONArray(string name)
         {
@@ -87,12 +72,17 @@ namespace KarrotObjectNotation
         #endregion
 
         #region Enumeration
-        public IEnumerator GetEnumerator()
+        public IEnumerator<object> GetEnumerator()
         {
-          return new ItemEnumerator(Items.ToArray());
+            return new ItemEnumerator(Items.ToArray());
         }
 
-        private class ItemEnumerator:IEnumerator
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new ItemEnumerator(Items.ToArray());
+        }
+
+        private class ItemEnumerator : IEnumerator, IEnumerator<object>
         {
             public object[] itemList;
             int position = -1;
@@ -102,9 +92,9 @@ namespace KarrotObjectNotation
             {
                 itemList=list;
             }
-            private IEnumerator getEnumerator()
+            private IEnumerator<object> getEnumerator()
             {
-                return (IEnumerator)this;
+                return (IEnumerator<object>)this;
             }
             //IEnumerator
             public bool MoveNext()
@@ -131,6 +121,22 @@ namespace KarrotObjectNotation
                         throw new InvalidOperationException();
                     }
                 }
+            }
+            public void Dispose()
+            {
+
+            }
+        }
+
+        public object this[int index]
+        {
+            get
+            {
+                return Items[index];
+            }
+            set
+            {
+                Items[index] = value;
             }
         }
         #endregion
