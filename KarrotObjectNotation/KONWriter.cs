@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Globalization;
+using System.Numerics;
 
 namespace KarrotObjectNotation
 {
@@ -201,7 +202,7 @@ namespace KarrotObjectNotation
         {
             string[] reservedCharacters = 
             {
-                "[", "]", "{", "}", "=", ";", "//", "%", "&", "!", "#", "@", "$"
+                "[", "]", "{", "}", "=", ";", "//", "%", "&", "~", "!", "#", "@", "$"
             };
             for(int i = 0; i < reservedCharacters.Length; i++)
             {
@@ -220,6 +221,9 @@ namespace KarrotObjectNotation
             [typeof(uint)] = "%^",
             [typeof(long)] = "&",
             [typeof(ulong)] = "&^",
+            [typeof(BigInteger)] = "&*",
+            [typeof(short)] = "~",
+            [typeof(ushort)] = "~^",
             [typeof(float)] = "!",
             [typeof(double)] = "#",
             [typeof(bool)] = "@",

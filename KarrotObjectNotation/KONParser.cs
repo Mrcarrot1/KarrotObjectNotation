@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Text.Json;
@@ -34,7 +35,7 @@ namespace KarrotObjectNotation
             {
                 Regex specialCharactersRegex = new Regex(@"[^\w\-]");
                 Regex bracketsRegex = new Regex(@"(?<!\\)[\[\]\{\}]");
-                Regex startingTypeCharactersRegex = new Regex(@"^[%\^#!@\$&]{1,2}");
+                Regex startingTypeCharactersRegex = new Regex(@"^[%\^#!@\$&~*]{1,2}");
                 foreach(Match match in bracketsRegex.Matches(contents))
                 {
                     contents = contents.Replace(match.Value, $"\n{match.Value}\n");
@@ -106,8 +107,18 @@ namespace KarrotObjectNotation
                             {
                                 if(line.StartsWith("&^"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
+                                if(line.StartsWith("&*"))
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), BigInteger.Parse(GetCase(value, Options.ValueReadMode)));
                                 else
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
+                                continue;
+                            }
+                            if(line.StartsWith('~'))
+                            {
+                                if(line.StartsWith("~^"))
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ushort.Parse(GetCase(value, Options.ValueReadMode)));
+                                else
+                                    currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), short.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
                             if(line.StartsWith('!'))
@@ -163,8 +174,18 @@ namespace KarrotObjectNotation
                             {
                                 if(line.StartsWith("&^"))
                                     currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                if(line.StartsWith("&*"))
+                                    currentArray.AddItem(BigInteger.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 else
                                     currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                continue;
+                            }
+                            if(line.StartsWith('~'))
+                            {
+                                if(line.StartsWith("~^"))
+                                    currentArray.AddItem(ushort.Parse(startingTypeCharactersRegex.Replace(line, "")));
+                                else
+                                    currentArray.AddItem(short.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
                             if(line.StartsWith('!'))
@@ -374,7 +395,7 @@ namespace KarrotObjectNotation
             }
         }
         /// <summary>
-        /// Takes a value's string representation, determines the correct type for the value, and returns the appropriate KONValue<T> object. Only used in implicit typing.
+        /// Takes a value's string representation, determines the correct type for the value, and returns the appropriate object. Only used in implicit typing.
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
@@ -390,6 +411,10 @@ namespace KarrotObjectNotation
                 if(long.TryParse(input, out long longResult))
                 {
                     return longResult;
+                }
+                if(BigInteger.TryParse(input, out BigInteger bigIntegerResult))
+                {
+                    return bigIntegerResult;
                 }
                 if(float.TryParse(input, out float floatResult))
                 {
@@ -408,7 +433,7 @@ namespace KarrotObjectNotation
                     return boolResult;
                 }
                 //We check for the unsigned types last just to make sure that, for example,
-                //Int32.MaxValue + 1 doesn't get read as 
+                //Int32.MaxValue + 1 doesn't get read as uint
                 if(uint.TryParse(input, out uint uintResult))
                 {
                     return uintResult;
@@ -441,7 +466,7 @@ namespace KarrotObjectNotation
         {
             string[] reservedCharacters = 
             {
-                "[", "]", "{", "}", "=", ";", "//", "%", "&", "!", "#", "@", "$"
+                "[", "]", "{", "}", "=", ";", "//", "%", "&", "~", "!", "#", "@", "$"
             };
             for(int i = 0; i < reservedCharacters.Length; i++)
             {
