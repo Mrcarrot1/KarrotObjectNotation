@@ -221,7 +221,7 @@ namespace KarrotObjectNotation
                     }
                     catch(Exception)
                     {
-                        throw;// new FormatException($"KON Syntax Error at '{line}', line {i}.");
+                        throw new FormatException($"KON Syntax Error at '{line}', line {i}.");
                     }
                 }
                 return output;
@@ -232,7 +232,7 @@ namespace KarrotObjectNotation
             }
             catch
             {
-                throw;// new FormatException();
+                throw new FormatException();
             }      
         }
         /// <summary>
