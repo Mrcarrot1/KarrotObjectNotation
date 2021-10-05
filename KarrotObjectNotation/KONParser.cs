@@ -107,7 +107,7 @@ namespace KarrotObjectNotation
                             {
                                 if(line.StartsWith("&^"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
-                                if(line.StartsWith("&*"))
+                                else if(line.StartsWith("&*"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), BigInteger.Parse(GetCase(value, Options.ValueReadMode)));
                                 else
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
@@ -174,7 +174,7 @@ namespace KarrotObjectNotation
                             {
                                 if(line.StartsWith("&^"))
                                     currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                                if(line.StartsWith("&*"))
+                                else if(line.StartsWith("&*"))
                                     currentArray.AddItem(BigInteger.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 else
                                     currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
@@ -219,9 +219,9 @@ namespace KarrotObjectNotation
                             currentNode = currentNode.Parent;
                         }
                     }
-                    catch
+                    catch(Exception)
                     {
-                        throw new FormatException($"KON Syntax Error at '{line}', line {i}.");
+                        throw;// new FormatException($"KON Syntax Error at '{line}', line {i}.");
                     }
                 }
                 return output;
@@ -232,7 +232,7 @@ namespace KarrotObjectNotation
             }
             catch
             {
-                throw new FormatException();
+                throw;// new FormatException();
             }      
         }
         /// <summary>
