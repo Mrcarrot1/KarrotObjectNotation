@@ -138,7 +138,7 @@ namespace KarrotObjectNotation
                             }
                             if(line.StartsWith('$'))
                             {
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(value, Options.ValueReadMode));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(FormatValue(value), Options.ValueReadMode));
                                 continue;
                             }
                             if(value.ToLower() == "null")
@@ -205,7 +205,7 @@ namespace KarrotObjectNotation
                             }
                             if(line.StartsWith('$'))
                             {
-                                currentArray.AddItem(startingTypeCharactersRegex.Replace(line, ""));
+                                currentArray.AddItem(FormatValue(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
                             currentArray.AddItem(GetValue(line));
@@ -443,7 +443,7 @@ namespace KarrotObjectNotation
                     return ulongResult;
                 }
             }
-            return isJSON ? GetCase(quotesRegex.Replace(input, ""), Options.ValueReadMode) : GetCase(input, Options.ValueReadMode);
+            return isJSON ? GetCase(quotesRegex.Replace(input, ""), Options.ValueReadMode) : GetCase(FormatValue(input), Options.ValueReadMode);
         }
         private static string GetCase(string str, KONParserOptions.CaseReadMode crm)
         {
@@ -470,9 +470,9 @@ namespace KarrotObjectNotation
             };
             for(int i = 0; i < reservedCharacters.Length; i++)
             {
-                input = input.Replace($"\\{reservedCharacters[i]}", reservedCharacters[i]).Replace(@"\n", "\n");
+                input = input.Replace($@"\{reservedCharacters[i]}", reservedCharacters[i]);
             }
-            return input;
+            return input.Replace(@"\n", "\n");
         }
     }
     /// <summary>

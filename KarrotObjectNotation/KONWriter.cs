@@ -206,9 +206,9 @@ namespace KarrotObjectNotation
             };
             for(int i = 0; i < reservedCharacters.Length; i++)
             {
-                input = input.Replace(reservedCharacters[i], $"\\{reservedCharacters[i]}").Replace("\n", @"\n");
+                input = input.Replace(reservedCharacters[i], $@"\{reservedCharacters[i]}");
             }
-            return input;
+            return input.Replace("\n", @"\n");
         }
         private static string GetTypeMarker(Type type)
         {
