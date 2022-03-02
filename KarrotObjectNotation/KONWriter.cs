@@ -48,7 +48,7 @@ namespace KarrotObjectNotation
                 if(pair.Value == null)
                     output += $"\n{indent2}{GetCase(pair.Key, Options.KeyWriteMode)} = null";
                 else
-                    output += $"\n{indent2}{GetTypeMarker(pair.Value.GetType())}{GetCase(pair.Key, Options.KeyWriteMode)} = {GetCase(FormatValue(pair.Value.ToString()), Options.ValueWriteMode)}";
+                    output += $"\n{indent2}{GetTypeMarker(pair.Value)}{GetCase(pair.Key, Options.KeyWriteMode)} = {GetCase(FormatValue(pair.Value.ToString()), Options.ValueWriteMode)}";
                 if(Options.Inline)
                     output += ";";
             }
@@ -84,7 +84,7 @@ namespace KarrotObjectNotation
                 if(item == null)
                     output += $"\n{indent2}null";
                 else
-                    output += $"\n{indent2}{GetTypeMarker(item.GetType())}{GetCase(FormatValue(item.ToString()), Options.ValueWriteMode)}";
+                    output += $"\n{indent2}{GetTypeMarker(item)}{GetCase(FormatValue(item.ToString()), Options.ValueWriteMode)}";
                 if(Options.ArrayInline)
                     output += ";";
             }
@@ -210,9 +210,13 @@ namespace KarrotObjectNotation
             }
             return input.Replace("\n", @"\n");
         }
-        private static string GetTypeMarker(Type type)
+        private string GetTypeMarker(object value)
         {
-            if(TypeMarkers.ContainsKey(type)) return TypeMarkers[type];
+            if(TypeMarkers.ContainsKey(value.GetType())) 
+            {
+                if((value.GetType() != GetImplicitType(value.ToString())) || Options.AllExplicitMarkers)
+                    return TypeMarkers[value.GetType()];
+            }
             return "";
         }
         private static readonly Dictionary<Type, string> TypeMarkers = new Dictionary<Type, string>
@@ -229,6 +233,54 @@ namespace KarrotObjectNotation
             [typeof(bool)] = "@",
             [typeof(string)] = "$",           
         };
+        /// <summary>
+        /// Checks the type that the parser would read implicitly.
+        /// Can be used to determine whether a type marker is necessary.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private static Type GetImplicitType(string input)
+        {
+            if(int.TryParse(input, out int intResult))
+            {
+                return typeof(int);
+            }
+            if(long.TryParse(input, out long longResult))
+            {
+                return typeof(long);
+            }
+            if(BigInteger.TryParse(input, out BigInteger bigIntegerResult))
+            {
+                return typeof(BigInteger);
+            }
+            if(float.TryParse(input, out float floatResult))
+            {
+                return typeof(float);
+            }
+            if(double.TryParse(input, out double doubleResult))
+            {
+                return typeof(double);
+            }
+            if(input.ToLower() == "null")
+            {
+                return typeof(object);
+            }
+            if(bool.TryParse(input, out bool boolResult))
+            {
+                return typeof(bool);
+            }
+            //We check for the unsigned types last just to make sure that, for example,
+            //Int32.MaxValue + 1 doesn't get read as uint
+            if(uint.TryParse(input, out uint uintResult))
+            {
+                return typeof(uint);
+            }
+            if(ulong.TryParse(input, out ulong ulongResult))
+            {
+                return typeof(ulong);
+            }
+            return typeof(string);
+        }
     }
     
     /// <summary>
@@ -265,8 +317,12 @@ namespace KarrotObjectNotation
         /// Whether or not to write JSON arrays in a single line.
         /// </summary>
         public bool ArrayInline = true;
+        /// <summary>
+        /// Whether or not to automatically insert a type marker in front of all values regardless of how implicit typing would read the value.
+        /// </summary>
+        public bool AllExplicitMarkers = false;
 
-        public KONWriterOptions(CaseWriteMode nodeNameWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode keyWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode valueWriteMode = CaseWriteMode.KeepOriginal, bool inline = false, bool arrayInline = true)
+        public KONWriterOptions(CaseWriteMode nodeNameWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode keyWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode valueWriteMode = CaseWriteMode.KeepOriginal, bool inline = false, bool arrayInline = true, bool allExplicitMarkers = false)
         {
             NodeNameWriteMode = nodeNameWriteMode;
             KeyWriteMode = keyWriteMode;
@@ -274,6 +330,7 @@ namespace KarrotObjectNotation
 
             Inline = inline;
             ArrayInline = arrayInline;
+            AllExplicitMarkers = allExplicitMarkers;
         }
         public enum CaseWriteMode
         {
