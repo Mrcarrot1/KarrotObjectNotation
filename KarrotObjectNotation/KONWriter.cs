@@ -214,7 +214,7 @@ namespace KarrotObjectNotation
         {
             if(TypeMarkers.ContainsKey(value.GetType())) 
             {
-                if((value.GetType() != GetImplicitType(value.ToString())) || Options.AllExplicitMarkers)
+                if((value.GetType() != GetImplicitType(value.ToString())) || Options.AllExplicitTypes)
                     return TypeMarkers[value.GetType()];
             }
             return "";
@@ -320,9 +320,9 @@ namespace KarrotObjectNotation
         /// <summary>
         /// Whether or not to automatically insert a type marker in front of all values regardless of how implicit typing would read the value.
         /// </summary>
-        public bool AllExplicitMarkers = false;
+        public bool AllExplicitTypes = false;
 
-        public KONWriterOptions(CaseWriteMode nodeNameWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode keyWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode valueWriteMode = CaseWriteMode.KeepOriginal, bool inline = false, bool arrayInline = true, bool allExplicitMarkers = false)
+        public KONWriterOptions(CaseWriteMode nodeNameWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode keyWriteMode = CaseWriteMode.KeepOriginal, CaseWriteMode valueWriteMode = CaseWriteMode.KeepOriginal, bool inline = false, bool arrayInline = true, bool allExplicitTypes = false)
         {
             NodeNameWriteMode = nodeNameWriteMode;
             KeyWriteMode = keyWriteMode;
@@ -330,7 +330,7 @@ namespace KarrotObjectNotation
 
             Inline = inline;
             ArrayInline = arrayInline;
-            AllExplicitMarkers = allExplicitMarkers;
+            AllExplicitTypes = allExplicitTypes;
         }
         public enum CaseWriteMode
         {
