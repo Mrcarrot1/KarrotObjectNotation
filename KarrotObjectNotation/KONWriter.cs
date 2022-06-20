@@ -1,4 +1,4 @@
-﻿//Int: %
+//Int: %
 //Long: &
 //Unsigned: ^
 //Float: !
@@ -37,26 +37,26 @@ namespace KarrotObjectNotation
         {
             //It feels wrong to do it like this but this way it's nice and neatly indented
             string indent = "";
-            for(int i = 0; i < currentDepth; i++)
+            for (int i = 0; i < currentDepth; i++)
             {
                 indent += "    ";
             }
             string indent2 = indent + "    ";
             string output = $"{indent}{GetCase(node.Name, Options.NodeNameWriteMode)}\n{indent}{{";
-            foreach(KeyValuePair<string, object> pair in node.Values)
+            foreach (KeyValuePair<string, object> pair in node.Values)
             {
-                if(pair.Value == null)
+                if (pair.Value == null)
                     output += $"\n{indent2}{GetCase(pair.Key, Options.KeyWriteMode)} = null";
                 else
                     output += $"\n{indent2}{GetTypeMarker(pair.Value)}{GetCase(pair.Key, Options.KeyWriteMode)} = {GetCase(FormatValue(pair.Value.ToString()), Options.ValueWriteMode)}";
-                if(Options.Inline)
+                if (Options.Inline)
                     output += ";";
             }
-            for(int i = 0; i < node.Children.Count; i++)
+            for (int i = 0; i < node.Children.Count; i++)
             {
                 output += $"\n{Write(node.Children[i], currentDepth + 1)}";
             }
-            for(int i = 0; i < node.Arrays.Count; i++)
+            for (int i = 0; i < node.Arrays.Count; i++)
             {
                 KONArray currentArray = node.Arrays[i];
                 output += $"\n{WriteArray(currentArray, currentDepth + 1)}";
@@ -64,7 +64,7 @@ namespace KarrotObjectNotation
             output += $"\n{indent}}}";
             string[] outputLines = output.Split('\n').Where(x => x.Trim() != "").ToArray();
             output = outputLines[0];
-            for(int i = 1; i < outputLines.Length; i++)
+            for (int i = 1; i < outputLines.Length; i++)
             {
                 output += Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
@@ -73,30 +73,30 @@ namespace KarrotObjectNotation
         public string WriteArray(KONArray array, int currentDepth = 0)
         {
             string indent = "";
-            for(int i = 0; i < currentDepth; i++)
+            for (int i = 0; i < currentDepth; i++)
             {
                 indent += "    ";
             }
             string indent2 = indent + "    ";
             string output = $"{indent}{GetCase(array.Name, Options.NodeNameWriteMode)}\n{indent}[";
-            foreach(object item in array.Items)
+            foreach (object item in array.Items)
             {
-                if(item == null)
+                if (item == null)
                     output += $"\n{indent2}null";
                 else
                     output += $"\n{indent2}{GetTypeMarker(item)}{GetCase(FormatValue(item.ToString()), Options.ValueWriteMode)}";
-                if(Options.ArrayInline)
+                if (Options.ArrayInline)
                     output += ";";
             }
             output += $"\n{indent}]";
             string[] outputLines = output.Split('\n').Where(x => x.Trim() != "").ToArray();
             output = outputLines[0];
-            for(int i = 1; i < outputLines.Length; i++)
+            for (int i = 1; i < outputLines.Length; i++)
             {
                 output += Options.ArrayInline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
             return output;
-            
+
         }
         /// <summary>
         /// Takes a KON node and returns its JSON string representation.
@@ -108,30 +108,30 @@ namespace KarrotObjectNotation
         public string WriteJSON(KONNode node, int currentDepth = 0, bool isLast = true)
         {
             string indent = "";
-            for(int i = 0; i < currentDepth; i++)
+            for (int i = 0; i < currentDepth; i++)
             {
                 indent += "    ";
             }
             string indent2 = indent + "    ";
             string output = currentDepth == 0 ? $"{indent}{{" : $"{indent}\"{GetCase(node.Name, Options.NodeNameWriteMode)}\": {{";
-            foreach(KeyValuePair<string, object> value in node.Values)
+            foreach (KeyValuePair<string, object> value in node.Values)
             {
-                if(value.Value is string)
+                if (value.Value is string)
                     output += $"\n{indent2}\"{value.Key}\": \"{value.Value}\"";
-                else if(value.Value == null)
+                else if (value.Value == null)
                     output += $"\n{indent2}\"{value.Key}\": null";
                 else
                     output += $"\n{indent2}\"{value.Key}\": {value.Value.ToString().ToLower()}";
-                if(value.Key != node.Values.Keys.Last() || node.Arrays.Count > 0 || node.Children.Count > 0)
+                if (value.Key != node.Values.Keys.Last() || node.Arrays.Count > 0 || node.Children.Count > 0)
                 {
                     output += ",\n";
                 }
             }
-            foreach(KONArray array in node.Arrays)
+            foreach (KONArray array in node.Arrays)
             {
                 output += this.WriteJSONArray(array, currentDepth + 1, node.Children.Count < 1 || !array.Equals(node.Arrays.Last()));
             }
-            for(int i = 0; i < node.Children.Count; i++)
+            for (int i = 0; i < node.Children.Count; i++)
             {
                 output += "\n" + this.WriteJSON(node.Children[i], currentDepth + 1, i == node.Children.Count - 1);
             }
@@ -140,7 +140,7 @@ namespace KarrotObjectNotation
             //This step also formats the JSON as inline or not
             string[] outputLines = output.Split('\n').Where(x => x.Trim() != "").ToArray();
             output = outputLines[0].Trim();
-            for(int i = 1; i < outputLines.Length; i++)
+            for (int i = 1; i < outputLines.Length; i++)
             {
                 output += Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
@@ -156,26 +156,26 @@ namespace KarrotObjectNotation
         public string WriteJSONArray(KONArray array, int currentDepth = 0, bool isLast = true)
         {
             string indent = "";
-            for(int i = 0; i < currentDepth; i++)
+            for (int i = 0; i < currentDepth; i++)
             {
                 indent += "    ";
             }
             string output = $"{indent}\"{array.Name}\": [";
-            for(int i = 0; i < array.Count; i++)
+            for (int i = 0; i < array.Count; i++)
             {
-                if(array.Items[i] is string)
+                if (array.Items[i] is string)
                     output += $"\n\"{array.Items[i]}\"";
-                else if(array[i] == null)
+                else if (array[i] == null)
                     output += "\nnull";
                 else
                     output += $"\n{array.Items[i].ToString().ToLower()}";
-                if(i != array.Count - 1)
+                if (i != array.Count - 1)
                     output += ",\n";
             }
             output += isLast ? $"\n{indent}]" : $"\n{indent}],";
             string[] outputLines = output.Split('\n').Where(x => x.Trim() != "").ToArray();
             output = outputLines[0];
-            for(int i = 1; i < outputLines.Length; i++)
+            for (int i = 1; i < outputLines.Length; i++)
             {
                 output += Options.ArrayInline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
             }
@@ -183,16 +183,16 @@ namespace KarrotObjectNotation
         }
         private string GetCase(string str, KONWriterOptions.CaseWriteMode cwm)
         {
-            if(cwm == KONWriterOptions.CaseWriteMode.ToUpper) return str.ToUpper();
-            if(cwm == KONWriterOptions.CaseWriteMode.ToLower) return str.ToLower();
-            if(cwm == KONWriterOptions.CaseWriteMode.ToTitle) return new CultureInfo("en-US",false).TextInfo.ToTitleCase(str);
+            if (cwm == KONWriterOptions.CaseWriteMode.ToUpper) return str.ToUpper();
+            if (cwm == KONWriterOptions.CaseWriteMode.ToLower) return str.ToLower();
+            if (cwm == KONWriterOptions.CaseWriteMode.ToTitle) return new CultureInfo("en-US", false).TextInfo.ToTitleCase(str);
             else return str;
         }
         public KONWriter(KONWriterOptions options)
         {
             Options = options;
         }
-        
+
         /// <summary>
         /// Returns a value suitable for use in a KON file
         /// </summary>
@@ -200,11 +200,11 @@ namespace KarrotObjectNotation
         /// <returns></returns>
         private static string FormatValue(string input)
         {
-            string[] reservedCharacters = 
+            string[] reservedCharacters =
             {
                 "[", "]", "{", "}", "=", ";", "//", "%", "&", "~", "!", "#", "@", "$"
             };
-            for(int i = 0; i < reservedCharacters.Length; i++)
+            for (int i = 0; i < reservedCharacters.Length; i++)
             {
                 input = input.Replace(reservedCharacters[i], $@"\{reservedCharacters[i]}");
             }
@@ -212,9 +212,9 @@ namespace KarrotObjectNotation
         }
         private string GetTypeMarker(object value)
         {
-            if(TypeMarkers.ContainsKey(value.GetType())) 
+            if (TypeMarkers.ContainsKey(value.GetType()))
             {
-                if((value.GetType() != GetImplicitType(value.ToString())) || Options.AllExplicitTypes)
+                if ((value.GetType() != GetImplicitType(value.ToString())) || Options.AllExplicitTypes)
                     return TypeMarkers[value.GetType()];
             }
             return "";
@@ -231,7 +231,7 @@ namespace KarrotObjectNotation
             [typeof(float)] = "!",
             [typeof(double)] = "#",
             [typeof(bool)] = "@",
-            [typeof(string)] = "$",           
+            [typeof(string)] = "$",
         };
         /// <summary>
         /// Checks the type that the parser would read implicitly.
@@ -241,48 +241,48 @@ namespace KarrotObjectNotation
         /// <returns></returns>
         private static Type GetImplicitType(string input)
         {
-            if(int.TryParse(input, out int intResult))
+            if (int.TryParse(input, out int intResult))
             {
                 return typeof(int);
             }
-            if(long.TryParse(input, out long longResult))
+            if (long.TryParse(input, out long longResult))
             {
                 return typeof(long);
             }
-            if(BigInteger.TryParse(input, out BigInteger bigIntegerResult))
+            if (BigInteger.TryParse(input, out BigInteger bigIntegerResult))
             {
                 return typeof(BigInteger);
             }
-            if(float.TryParse(input, out float floatResult))
+            if (float.TryParse(input, out float floatResult))
             {
                 return typeof(float);
             }
-            if(double.TryParse(input, out double doubleResult))
+            if (double.TryParse(input, out double doubleResult))
             {
                 return typeof(double);
             }
-            if(input.ToLower() == "null")
+            if (input.ToLower() == "null")
             {
                 return typeof(object);
             }
-            if(bool.TryParse(input, out bool boolResult))
+            if (bool.TryParse(input, out bool boolResult))
             {
                 return typeof(bool);
             }
             //We check for the unsigned types last just to make sure that, for example,
             //Int32.MaxValue + 1 doesn't get read as uint
-            if(uint.TryParse(input, out uint uintResult))
+            if (uint.TryParse(input, out uint uintResult))
             {
                 return typeof(uint);
             }
-            if(ulong.TryParse(input, out ulong ulongResult))
+            if (ulong.TryParse(input, out ulong ulongResult))
             {
                 return typeof(ulong);
             }
             return typeof(string);
         }
     }
-    
+
     /// <summary>
     /// Configuration for a KONWriter.
     /// </summary>

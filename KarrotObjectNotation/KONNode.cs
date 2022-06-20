@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -70,7 +70,7 @@ namespace KarrotObjectNotation
         {
             Values.Remove(key);
         }
-        
+
 
         /// <summary>
         /// Adds the given array to this node's arrays.
@@ -81,7 +81,7 @@ namespace KarrotObjectNotation
             array.Parent = this;
             Arrays.Add(array);
         }
-        
+
         #region Constructors
         public KONNode(string name)
         {

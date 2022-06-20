@@ -1,4 +1,4 @@
-﻿//Int: %
+//Int: %
 //Long: &
 //Unsigned: ^
 //Float: !
@@ -36,17 +36,21 @@ namespace KarrotObjectNotation
                 Regex specialCharactersRegex = new Regex(@"[^\w\-]");
                 Regex bracketsRegex = new Regex(@"(?<!\\)[\[\]\{\}]");
                 Regex startingTypeCharactersRegex = new Regex(@"^[%\^#!@\$&~*]{1,2}");
-                foreach(Match match in bracketsRegex.Matches(contents))
-                {
-                    contents = contents.Replace(match.Value, $"\n{match.Value}\n");
-                }
+                
+                //Replace each match with \n<match>\n for parsing
+                contents = bracketsRegex.Replace(contents, new MatchEvaluator(
+                    (Match m) =>
+                    {
+                        return $"\n{m.Value}\n";
+                    }));
+
                 contents = Regex.Replace(contents, @"(?<!\\);", "\n");
                 string[] lines = contents.Split('\n');
                 string previousLine = "";
                 string line = lines[0];
                 int currentIndex = 0;
                 //Skip any preceding comments before using a line as the name
-                while(line.StartsWith("//"))
+                while (line.StartsWith("//"))
                 {
                     currentIndex++;
                     line = lines[currentIndex];
@@ -56,14 +60,14 @@ namespace KarrotObjectNotation
                 KONNode currentNode = output;
                 bool arrayReadMode = false;
                 KONArray currentArray = null;
-                for(int i = currentIndex; i < lines.Length; i++)
+                for (int i = currentIndex; i < lines.Length; i++)
                 {
                     try
                     {
                         previousLine = line;
                         line = lines[i].Trim();
                         //Ignore any line that starts with //
-                        if(Regex.IsMatch(line, @"^//"))
+                        if (Regex.IsMatch(line, @"^//"))
                         {
                             line = previousLine;
                             continue;
@@ -73,12 +77,12 @@ namespace KarrotObjectNotation
                         //Ignore any blank line-
                         //We filtered out any preceding or trailing whitespace already
                         //So any blank line will be an empty string
-                        if(line == "")
+                        if (line == "")
                         {
                             line = previousLine;
                             continue;
                         }
-                        if(line.Contains("=") && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<![:\\])=") && !arrayReadMode)
                         {
                             /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
                             {
@@ -90,150 +94,150 @@ namespace KarrotObjectNotation
                             string[] splitLine = line.Split('=');
                             string key = splitLine[0];
                             string value = "";
-                            for(int j = 1; j < splitLine.Length; j++)
+                            for (int j = 1; j < splitLine.Length; j++)
                             {
                                 value += splitLine[j];
                             }
                             value = value.Trim();
-                            if(line.StartsWith('%'))
+                            if (line.StartsWith('%'))
                             {
-                                if(line.StartsWith("%^"))
+                                if (line.StartsWith("%^"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), uint.Parse(GetCase(value, Options.ValueReadMode)));
                                 else
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), int.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('&'))
+                            if (line.StartsWith('&'))
                             {
-                                if(line.StartsWith("&^"))
+                                if (line.StartsWith("&^"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ulong.Parse(GetCase(value, Options.ValueReadMode)));
-                                else if(line.StartsWith("&*"))
+                                else if (line.StartsWith("&*"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), BigInteger.Parse(GetCase(value, Options.ValueReadMode)));
                                 else
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), long.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('~'))
+                            if (line.StartsWith('~'))
                             {
-                                if(line.StartsWith("~^"))
+                                if (line.StartsWith("~^"))
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), ushort.Parse(GetCase(value, Options.ValueReadMode)));
                                 else
                                     currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), short.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('!'))
+                            if (line.StartsWith('!'))
                             {
-                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode),float.Parse(GetCase(value, Options.ValueReadMode)));
+                                currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), float.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('#'))
+                            if (line.StartsWith('#'))
                             {
                                 currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), double.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('@'))
+                            if (line.StartsWith('@'))
                             {
                                 currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), bool.Parse(GetCase(value, Options.ValueReadMode)));
                                 continue;
                             }
-                            if(line.StartsWith('$'))
+                            if (line.StartsWith('$'))
                             {
                                 currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetCase(FormatValue(value), Options.ValueReadMode));
                                 continue;
                             }
-                            if(value.ToLower() == "null")
+                            if (value.ToLower() == "null")
                             {
                                 currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), null);
                                 continue;
                             }
                             currentNode.Values.Add(GetCase(specialCharactersRegex.Replace(key, ""), Options.KeyReadMode), GetValue(value));
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && previousLine != output.Name && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && previousLine != output.Name && !arrayReadMode)
                         {
                             KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                             currentNode.AddChild(newNode);
                             currentNode = newNode;
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(previousLine, @"(?<!\\)\[") && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(previousLine, @"(?<!\\)\[") && !arrayReadMode)
                         {
                             currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                             currentNode.AddArray(currentArray);
                             arrayReadMode = true;
                         }
-                        if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\]") && !Regex.IsMatch(line, @"(?<!\\)\["))
+                        if (arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\]") && !Regex.IsMatch(line, @"(?<!\\)\["))
                         {
-                            if(line.StartsWith('%'))
+                            if (line.StartsWith('%'))
                             {
-                                if(line.StartsWith("%^"))
+                                if (line.StartsWith("%^"))
                                     currentArray.AddItem(uint.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 else
                                     currentArray.AddItem(int.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('&'))
+                            if (line.StartsWith('&'))
                             {
-                                if(line.StartsWith("&^"))
+                                if (line.StartsWith("&^"))
                                     currentArray.AddItem(ulong.Parse(startingTypeCharactersRegex.Replace(line, "")));
-                                else if(line.StartsWith("&*"))
+                                else if (line.StartsWith("&*"))
                                     currentArray.AddItem(BigInteger.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 else
                                     currentArray.AddItem(long.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('~'))
+                            if (line.StartsWith('~'))
                             {
-                                if(line.StartsWith("~^"))
+                                if (line.StartsWith("~^"))
                                     currentArray.AddItem(ushort.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 else
                                     currentArray.AddItem(short.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('!'))
+                            if (line.StartsWith('!'))
                             {
                                 currentArray.AddItem(float.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('#'))
+                            if (line.StartsWith('#'))
                             {
                                 currentArray.AddItem(double.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('@'))
+                            if (line.StartsWith('@'))
                             {
                                 currentArray.AddItem(bool.Parse(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
-                            if(line.StartsWith('$'))
+                            if (line.StartsWith('$'))
                             {
                                 currentArray.AddItem(FormatValue(startingTypeCharactersRegex.Replace(line, "")));
                                 continue;
                             }
                             currentArray.AddItem(GetValue(line));
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
                         {
                             arrayReadMode = false;
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)}"))
+                        if (Regex.IsMatch(line, @"(?<!\\)}"))
                         {
                             currentNode = currentNode.Parent;
                         }
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         throw new FormatException($"KON Syntax Error at '{line}', line {i}.");
                     }
                 }
                 return output;
             }
-            catch(FormatException)
+            catch (FormatException)
             {
                 throw;
             }
             catch
             {
                 throw new FormatException();
-            }      
+            }
         }
         /// <summary>
         /// Attempts to parse the given string as a KON node.
@@ -274,7 +278,7 @@ namespace KarrotObjectNotation
                 Regex specialCharactersRegex = new Regex(@"[^\w\-]");
                 input = $"JSON_OBJECT\n{input}";
                 input = commasRegex.Replace(input, "\n");
-                foreach(Match match in bracketsRegex.Matches(input))
+                foreach (Match match in bracketsRegex.Matches(input))
                 {
                     input = input.Replace(match.Value, $"\n{match.Value}\n");
                 }
@@ -284,7 +288,7 @@ namespace KarrotObjectNotation
                 string line = lines[0];
                 int currentIndex = 0;
                 //Skip any preceding comments before using a line as the name
-                while(line.StartsWith("//"))
+                while (line.StartsWith("//"))
                 {
                     currentIndex++;
                     line = lines[currentIndex];
@@ -293,14 +297,14 @@ namespace KarrotObjectNotation
                 KONNode currentNode = output;
                 bool arrayReadMode = false;
                 KONArray currentArray = null;
-                for(int i = currentIndex; i < lines.Length; i++)
+                for (int i = currentIndex; i < lines.Length; i++)
                 {
                     try
                     {
                         previousLine = line;
                         line = lines[i].Trim();
                         //Ignore any line that starts with //
-                        if(line.StartsWith("//"))
+                        if (line.StartsWith("//"))
                         {
                             line = previousLine;
                             continue;
@@ -311,12 +315,12 @@ namespace KarrotObjectNotation
                         //Ignore any blank line-
                         //We filtered out any preceding or trailing whitespace already
                         //So any blank line will be an empty string
-                        if(line == "")
+                        if (line == "")
                         {
                             line = previousLine;
                             continue;
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\):.") && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\):.") && !arrayReadMode)
                         {
                             /*foreach(KeyValuePair<string, Type> typeMarker in TypeMarkers)
                             {
@@ -331,30 +335,30 @@ namespace KarrotObjectNotation
                             value = value.Trim();
                             //Skip anything where the value is empty- it's probably the beginning of an object(node) or array,
                             //and we'll come back to it on the next pass.
-                            if(value == "") continue;
+                            if (value == "") continue;
                             currentNode.Values.Add(GetCase(Regex.Replace(key, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.KeyReadMode), GetValue(value, true));
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && specialCharactersRegex.Replace(previousLine, "") != output.Name && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\){") && !Regex.IsMatch(previousLine, @"(?<!\\){") && specialCharactersRegex.Replace(previousLine, "") != output.Name && !arrayReadMode)
                         {
                             KONNode newNode = new KONNode(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                             currentNode.AddChild(newNode);
                             currentNode = newNode;
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)\[") && !arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\)\[") && !arrayReadMode)
                         {
                             currentArray = new KONArray(GetCase(Regex.Replace(previousLine, @"[^\w\-]", "", RegexOptions.None, TimeSpan.FromSeconds(1)), Options.NodeNameReadMode), currentNode);
                             currentNode.AddArray(currentArray);
                             arrayReadMode = true;
                         }
-                        if(arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(line, @"(?<!\\)\]"))
+                        if (arrayReadMode && !Regex.IsMatch(line, @"(?<!\\)\[") && !Regex.IsMatch(line, @"(?<!\\)\]"))
                         {
                             currentArray.AddItem(GetValue(line, true));
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
+                        if (Regex.IsMatch(line, @"(?<!\\)\]") && arrayReadMode)
                         {
                             arrayReadMode = false;
                         }
-                        if(Regex.IsMatch(line, @"(?<!\\)}"))
+                        if (Regex.IsMatch(line, @"(?<!\\)}"))
                         {
                             currentNode = currentNode.Parent;
                         }
@@ -366,7 +370,7 @@ namespace KarrotObjectNotation
                 }
                 return output;
             }
-            catch(FormatException)
+            catch (FormatException)
             {
                 throw;
             }
@@ -402,43 +406,43 @@ namespace KarrotObjectNotation
         public object GetValue(string input, bool isJSON = false)
         {
             Regex quotesRegex = new Regex(@"(?<!\\)""");
-            if(Options.AllowImplicitTyping || isJSON)
+            if (Options.AllowImplicitTyping || isJSON)
             {
-                if(int.TryParse(input, out int intResult))
+                if (int.TryParse(input, out int intResult))
                 {
                     return intResult;
                 }
-                if(long.TryParse(input, out long longResult))
+                if (long.TryParse(input, out long longResult))
                 {
                     return longResult;
                 }
-                if(BigInteger.TryParse(input, out BigInteger bigIntegerResult))
+                if (BigInteger.TryParse(input, out BigInteger bigIntegerResult))
                 {
                     return bigIntegerResult;
                 }
-                if(float.TryParse(input, out float floatResult))
+                if (float.TryParse(input, out float floatResult))
                 {
                     return floatResult;
                 }
-                if(double.TryParse(input, out double doubleResult))
+                if (double.TryParse(input, out double doubleResult))
                 {
                     return doubleResult;
                 }
-                if(input.ToLower() == "null")
+                if (input.ToLower() == "null")
                 {
                     return null;
                 }
-                if(bool.TryParse(input, out bool boolResult))
+                if (bool.TryParse(input, out bool boolResult))
                 {
                     return boolResult;
                 }
                 //We check for the unsigned types last just to make sure that, for example,
                 //Int32.MaxValue + 1 doesn't get read as uint
-                if(uint.TryParse(input, out uint uintResult))
+                if (uint.TryParse(input, out uint uintResult))
                 {
                     return uintResult;
                 }
-                if(ulong.TryParse(input, out ulong ulongResult))
+                if (ulong.TryParse(input, out ulong ulongResult))
                 {
                     return ulongResult;
                 }
@@ -447,12 +451,12 @@ namespace KarrotObjectNotation
         }
         private static string GetCase(string str, KONParserOptions.CaseReadMode crm)
         {
-            if(crm == KONParserOptions.CaseReadMode.ToUpper) return str.ToUpper();
-            if(crm == KONParserOptions.CaseReadMode.ToLower) return str.ToLower();
-            if(crm == KONParserOptions.CaseReadMode.ToTitle) return new CultureInfo("en-US",false).TextInfo.ToTitleCase(str);
+            if (crm == KONParserOptions.CaseReadMode.ToUpper) return str.ToUpper();
+            if (crm == KONParserOptions.CaseReadMode.ToLower) return str.ToLower();
+            if (crm == KONParserOptions.CaseReadMode.ToTitle) return new CultureInfo("en-US", false).TextInfo.ToTitleCase(str);
             return str; //At the end, the only one left is keep original
         }
-        
+
         public KONParser(KONParserOptions options)
         {
             Options = options;
@@ -464,15 +468,15 @@ namespace KarrotObjectNotation
         /// <returns></returns>
         private static string FormatValue(string input)
         {
-            string[] reservedCharacters = 
+            string[] reservedCharacters =
             {
                 "[", "]", "{", "}", "=", ";", "//", "%", "&", "~", "!", "#", "@", "$"
             };
-            for(int i = 0; i < reservedCharacters.Length; i++)
+            for (int i = 0; i < reservedCharacters.Length; i++)
             {
                 input = input.Replace($@"\{reservedCharacters[i]}", reservedCharacters[i]);
             }
-            return input.Replace(@"\n", "\n");
+            return Regex.Replace(input, @"(?<!\\)\\n", "\n");
         }
     }
     /// <summary>

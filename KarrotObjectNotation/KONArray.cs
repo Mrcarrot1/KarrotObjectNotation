@@ -47,15 +47,15 @@ namespace KarrotObjectNotation
         /// <param name="removeAll">Whether or not to remove all instances of the item.</param>
         public void RemoveItem(object item, bool removeAll = false)
         {
-            if(Items.Contains(item))
+            if (Items.Contains(item))
             {
-                if(removeAll)
+                if (removeAll)
                     Items.RemoveAll(x => x.Equals(item));
                 else
                     Items.Remove(item);
             }
         }
-        
+
         #region Constructors
         public KONArray(string name)
         {
@@ -90,7 +90,7 @@ namespace KarrotObjectNotation
             //constructor
             public ItemEnumerator(object[] list)
             {
-                itemList=list;
+                itemList = list;
             }
             private IEnumerator<object> getEnumerator()
             {
