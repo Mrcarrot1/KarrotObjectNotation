@@ -6,10 +6,9 @@
 //String: $
 //Boolean: @
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text;
 using System.Globalization;
 using System.Numerics;
 
@@ -42,33 +41,35 @@ namespace KarrotObjectNotation
                 indent += "    ";
             }
             string indent2 = indent + "    ";
-            string output = $"{indent}{GetCase(node.Name, Options.NodeNameWriteMode)}\n{indent}{{";
+            StringBuilder output = new(512);
+            output.Append($"{indent}{GetCase(node.Name, Options.NodeNameWriteMode)}\n{indent}{{");
             foreach (KeyValuePair<string, object> pair in node.Values)
             {
                 if (pair.Value == null)
-                    output += $"\n{indent2}{GetCase(pair.Key, Options.KeyWriteMode)} = null";
+                    output.Append($"\n{indent2}{GetCase(pair.Key, Options.KeyWriteMode)} = null");
                 else
-                    output += $"\n{indent2}{GetTypeMarker(pair.Value)}{GetCase(pair.Key, Options.KeyWriteMode)} = {GetCase(FormatValue(pair.Value.ToString()), Options.ValueWriteMode)}";
+                    output.Append($"\n{indent2}{GetTypeMarker(pair.Value)}{GetCase(pair.Key, Options.KeyWriteMode)} = {GetCase(FormatValue(pair.Value.ToString()), Options.ValueWriteMode)}");
                 if (Options.Inline)
-                    output += ";";
+                    output.Append(";");
             }
-            for (int i = 0; i < node.Children.Count; i++)
+            foreach (KONNode childNode in node.Children)
             {
-                output += $"\n{Write(node.Children[i], currentDepth + 1)}";
+                output.Append($"\n{Write(childNode, currentDepth + 1)}");
             }
             for (int i = 0; i < node.Arrays.Count; i++)
             {
                 KONArray currentArray = node.Arrays[i];
-                output += $"\n{WriteArray(currentArray, currentDepth + 1)}";
+                output.Append($"\n{WriteArray(currentArray, currentDepth + 1)}");
             }
-            output += $"\n{indent}}}";
-            string[] outputLines = output.Split('\n').Where(x => x.Trim() != "").ToArray();
-            output = outputLines[0];
+            output.Append($"\n{indent}}}");
+            string[] outputLines = output.ToString().Split('\n').Where(x => x.Trim() != "").ToArray();
+            output.Clear();
+            output.Append(outputLines[0]);
             for (int i = 1; i < outputLines.Length; i++)
             {
-                output += Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}";
+                output.Append(Options.Inline ? $" {outputLines[i].Trim()}" : $"\n{outputLines[i]}");
             }
-            return output;
+            return output.ToString();
         }
         public string WriteArray(KONArray array, int currentDepth = 0)
         {

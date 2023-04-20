@@ -6,14 +6,10 @@
 //String: $
 //Boolean: @
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Globalization;
-using System.Text.Json;
 
 namespace KarrotObjectNotation
 {
